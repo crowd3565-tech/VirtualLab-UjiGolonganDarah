@@ -111,6 +111,12 @@ p{margin:0}
 .btn{font:600 15px/1.2 var(--f-body);padding:12px 18px;border-radius:10px;border:1px solid var(--accent);background:var(--accent);color:var(--on-accent);cursor:pointer;min-height:44px}
 .btn:hover{filter:brightness(1.06)}
 .btn.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+.btn.small{min-height:36px;padding:8px 12px;font-size:13px}
+.top-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.two{display:grid;grid-template-columns:minmax(0,1fr) 110px;gap:10px}
+input.text{font:inherit;color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:10px 12px;width:100%;min-height:44px}
+input.text:focus{outline:2px solid var(--info);outline-offset:1px}
+.report{font-family:var(--f-mono);font-size:12.5px;line-height:1.5;min-height:220px}
 .btn[aria-disabled="true"]{background:var(--disabled);border-color:var(--disabled);color:var(--disabled-ink);cursor:not-allowed;filter:none}
 .btn:focus-visible,.opt:focus-visible,.pcard:focus-visible,.item:focus-visible,.seg button:focus-visible,.chipbtn:focus-visible{outline:3px solid var(--info);outline-offset:2px}
 .actions{display:flex;flex-wrap:wrap;gap:10px;justify-content:flex-end}
@@ -199,6 +205,7 @@ table.ref th{font-family:var(--f-mono);font-size:12px;color:var(--muted)}
 
 .drag-ghost{position:fixed;left:0;top:0;pointer-events:none;z-index:50;transform:translate(-50%,-94%) rotate(-8deg);filter:drop-shadow(0 8px 10px rgba(0,0,0,.3))}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+@media (max-width:520px){.rack{gap:8px}.rack .item svg{width:46px}.rack .item .cap{font-size:10px}.panel{padding:18px}.bench{padding:16px}}
 @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
 </style>
 
@@ -208,7 +215,7 @@ table.ref th{font-family:var(--f-mono);font-size:12px;color:var(--muted)}
       <svg class="brand-mark" viewBox="0 0 34 34" aria-hidden="true"><path d="M17 3c5 7 10 12.5 10 18a10 10 0 0 1-20 0C7 15.5 12 10 17 3z" fill="#a3142a"/><ellipse cx="13" cy="20" rx="2.6" ry="4" fill="#fff" opacity=".45"/></svg>
       <div><b>Lab Virtual Golongan Darah</b><span>Uji ABO dan Rhesus · Biologi kelas XI</span></div>
     </div>
-    <span class="chip" id="chip" hidden></span>
+    <div class="top-actions"><span class="chip" id="chip" hidden></span><button type="button" class="btn ghost small" id="restart">Mulai ulang</button></div>
     <div class="stepper-wrap"><ol class="stepper" id="stepper" aria-label="Langkah praktikum"></ol></div>
   </header>
   <main class="app" id="app">
@@ -241,7 +248,8 @@ function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor
 const WX=i=>118+i*188, WY=160;
 
 /* ---------- state ---------- */
-const state={step:'s1',prediction:null,reason:'',history:[],quiz:{q1:null,q2:[],q3:null},quizDone:false,score:0};
+const state={step:'s1',prediction:null,reason:'',nama:'',kelas:'',history:[],runs:[],quiz:{q1:null,q2:[],q3:null},quizDone:false,score:0};
+const KEY='labgoldar-v1';
 function newWells(){return [0,1,2,3].map(()=>({blood:false,reagent:false,prog:0,stirred:false,reacted:false,seen:false}))}
 function makePatients(){
   const last=state.history[state.history.length-1];
@@ -488,7 +496,15 @@ function renderStepper(){
   $('#stepper').innerHTML=ORDER.map((s,i)=>`<li class="step ${i<k?'done':i===k?'now':''}"${i===k?' aria-current="step"':''}><span class="code">${s.toUpperCase()}</span><span>${NAMES[s]}</span></li>`).join('');
   const p=cur(),chip=$('#chip');chip.hidden=!p;if(p)chip.innerHTML=`Pasien <b>${p.code}</b> · ${p.age} th`;
 }
-function render(){renderStepper();VIEWS[state.step]()}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(Object.assign({},state,{reacting:false})))}catch(_){}}
+function load(){
+  try{const raw=localStorage.getItem(KEY);if(!raw)return false;const d=JSON.parse(raw);if(!d||!ORDER.includes(d.step))return false;
+    Object.assign(state,d);
+    state.wells.forEach(w=>{if(!w.stirred)w.prog=0});
+    if(state.wells.every(w=>w.stirred))state.wells.forEach(w=>{w.reacted=true});
+    state.pending=null;state.sel=null;state.blink=false;return true}catch(_){return false}
+}
+function render(){renderStepper();VIEWS[state.step]();save()}
 
 /* ---------- drag & tap ---------- */
 let drag=null,suppress=false;
@@ -560,11 +576,14 @@ VIEWS.s1=function(){
   <fieldset><legend>Apa yang terjadi jika darah bertemu serum yang sesuai?</legend>
     ${Object.keys(PRED).map(k=>`<label class="radio"><input type="radio" name="pred" id="pred-${k}" value="${k}" ${state.prediction===k?'checked':''}> ${PRED[k]}</label>`).join('')}
   </fieldset>
+  <div class="two"><label class="field" for="nama">Nama siswa<input class="text" id="nama" autocomplete="name" value="${esc(state.nama)}" placeholder="Nama lengkap"></label><label class="field" for="kelas">Kelas<input class="text" id="kelas" value="${esc(state.kelas)}" placeholder="XI-1"></label></div>
   <label class="field" for="reason">Alasanmu <span class="muted" style="font-weight:400">(boleh singkat)</span><textarea id="reason" rows="3" placeholder="Menurutku begitu karena…">${esc(state.reason)}</textarea></label>
   <div class="msg" id="msg" hidden></div>
   <div class="actions">${gate('start','Mulai praktikum',!!state.prediction,'Pilih satu prediksi dulu.')}</div>`;
   $$('input[name=pred]').forEach(r=>r.addEventListener('change',()=>{state.prediction=r.value;setGate('start',true);$('#msg').hidden=true}));
-  $('#reason').addEventListener('input',e=>{state.reason=e.target.value});
+  $('#reason').addEventListener('input',e=>{state.reason=e.target.value;save()});
+  $('#nama').addEventListener('input',e=>{state.nama=e.target.value;save()});
+  $('#kelas').addEventListener('input',e=>{state.kelas=e.target.value;save()});
   bindGate('start',()=>go('s2'));
 };
 
@@ -808,7 +827,7 @@ function buildAnalysis(){
     {q:'Apakah penggumpalan pada uji ini sama dengan darah membeku?',ev:'Ciri gumpalan pada perbesaran (S3c)',opts:[['Tidak. Aglutinasi adalah ikatan antigen–antibodi yang membuat sel darah merah saling menempel; pembekuan melibatkan trombosit dan faktor pembekuan (fibrin).',1],['Ya, keduanya terjadi karena trombosit pecah.',0],['Ya, karena keduanya membuat darah tampak bergumpal.',0],['Tidak, karena aglutinasi hanya terjadi pada golongan O.',0]],fb:'Perhatikan apa yang saling menempel pada gambar perbesaran.'},
     {q:'Mengapa golongan darah pendonor harus dicocokkan dengan penerima sebelum transfusi?',ev:'Kartu identitas hasil (S6), tabel acuan pola',opts:[['Antibodi penerima akan mengikat antigen pada sel darah pendonor yang tidak cocok sehingga sel menggumpal di dalam tubuh. Contoh: penerima A punya anti-B, jadi tidak cocok menerima darah B.',1],['Agar warna darah pendonor dan penerima sama.',0],['Supaya volume darah penerima tidak berlebihan.',0],['Karena sel darah penerima akan berubah golongan mengikuti pendonor.',0]],fb:'Antibodi apa yang dimiliki penerima? Antigen pendonor mana yang akan dikenalinya?'}
   ];
-  return Q.map(x=>({...x,opts:shuffle(x.opts),chosen:null,done:false}));
+  return Q.map(x=>({...x,opts:shuffle(x.opts),chosen:null,done:false,tries:0}));
 }
 const QUIZ=[
   {id:'q1',type:'radio',q:'Sampel menggumpal di sumur Anti-B, Anti-AB, dan Anti-D, tetapi tidak di Anti-A. Apa golongan darahnya?',opts:['A Rh+','A Rh−','B Rh+','B Rh−','AB Rh+'],key:'B Rh+',
@@ -831,7 +850,7 @@ function sheetHTML(){
 function bindSheet(){
   $$('.opt[data-q]').forEach(b=>b.addEventListener('click',()=>{
     const x=state.analysis[+b.dataset.q],o=+b.dataset.o;if(x.done)return;
-    x.chosen=o;if(x.opts[o][1])x.done=true;else log('S5',`Analisis nomor ${+b.dataset.q+1} belum tepat`);
+    x.chosen=o;x.tries=(x.tries||0)+1;if(x.opts[o][1])x.done=true;else log('S5',`Analisis nomor ${+b.dataset.q+1} belum tepat`);
     bench().innerHTML=sheetHTML();bindSheet();updS5();
     const el=$(`.opt[data-q="${b.dataset.q}"][data-o="${o}"]`);if(el)el.focus({preventScroll:true});
   }));
@@ -906,19 +925,68 @@ VIEWS.s6=function(){
   <label class="field" for="concl">Kesimpulan<textarea id="concl" rows="4" placeholder="Darah pasien ${p.code} menggumpal di sumur … karena …" ${state.done?'disabled':''}>${esc(state.conclusion)}</textarea></label>
   <label class="field" for="refl">Refleksi<textarea id="refl" rows="3" placeholder="Bagian mana yang paling membantumu memahami aglutinasi? Apa yang masih membingungkan?" ${state.done?'disabled':''}>${esc(state.reflection)}</textarea></label>
   <div class="msg" id="msg" hidden></div>
-  <div class="actions"><button type="button" class="btn ghost" id="again">Pasien lain</button>${state.done?'':gate('finish','Selesai',state.conclusion.trim().length>0,'Tulis kesimpulan 1–2 kalimat dulu.')}</div>`;
+  <div class="actions"><button type="button" class="btn ghost" id="again">Pasien lain</button>${state.done?'':gate('finish','Selesai',state.conclusion.trim().length>0,'Tulis kesimpulan 1–2 kalimat dulu.')}</div>
+  ${state.runs.length?`<details ${state.done?'open':''}><summary>Laporan untuk guru (${state.runs.length} pasien)</summary>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-top:10px">
+    <p class="muted" style="font-size:14px">Salin teks ini, lalu kirim ke guru lewat WhatsApp, Google Classroom, atau e-mail.</p>
+    <label class="sr" for="report">Teks laporan</label><textarea id="report" class="report" readonly rows="12">${esc(buildReport())}</textarea>
+    <div class="actions" style="justify-content:flex-start"><button type="button" class="btn" id="copyRep">Salin laporan</button></div></div></details>`:''}`;
   const c=$('#concl');c.addEventListener('input',()=>{state.conclusion=c.value;setGate('finish',c.value.trim().length>0)});
   $('#refl').addEventListener('input',e=>{state.reflection=e.target.value});
-  bindGate('finish',()=>{state.done=true;state.doneAt=new Date();state.history.push(T);VIEWS.s6();
-    say(`Praktikum selesai pukul ${state.doneAt.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})}. Tekan <b>Pasien lain</b> untuk menguji sampel berbeda.`,'ok')});
+  bindGate('finish',()=>{state.done=true;state.doneAt=new Date().toISOString();state.history.push(T);state.runs.push(runRecord());VIEWS.s6();save();
+    say(`Praktikum selesai pada ${fmtTime(state.doneAt)}. Salin laporan untuk guru di bawah, atau tekan <b>Pasien lain</b> untuk menguji sampel berbeda.`,'ok')});
+  const cp=$('#copyRep');if(cp)cp.addEventListener('click',()=>{const ta=$('#report');const done=()=>say('Laporan tersalin. Tempelkan di pesan untuk guru.','ok');
+    const fallback=()=>{ta.focus();ta.select();try{document.execCommand('copy')?done():say('Teks laporan sudah dipilih. Tekan Ctrl+C (atau tahan lalu Salin di HP).','info')}catch(_){say('Teks laporan sudah dipilih. Tekan Ctrl+C (atau tahan lalu Salin di HP).','info')}};
+    try{navigator.clipboard.writeText(ta.value).then(done,fallback)}catch(_){fallback()}});
+  c.addEventListener('change',save);$('#refl').addEventListener('change',save);
   $('#again').addEventListener('click',()=>{if(!state.done)state.history.push(T);resetRun();go('s2')});
-  if(state.done)say('Praktikum ditandai selesai. Tekan <b>Pasien lain</b> untuk menguji sampel berbeda; prediksi awalmu tetap tersimpan.','ok');
+  if(state.done&&!$('#msg').textContent)say('Praktikum ditandai selesai. Tekan <b>Pasien lain</b> untuk menguji sampel berbeda; prediksi awalmu tetap tersimpan.','ok');
 };
+
+/* ---------- laporan ---------- */
+function fmtTime(iso){try{return new Date(iso).toLocaleString('id-ID',{day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'})}catch(_){return iso}}
+function runRecord(){
+  const p=cur(),T=p.type,P=pat(T);
+  return {at:state.doneAt,code:p.code,age:p.age,type:tname(T),pattern:WELLS.map((n,i)=>`${n} ${P[i]?'menggumpal':'tidak menggumpal'}`),
+    tries4:state.tries4+1,analysis:(state.analysis||[]).map((x,i)=>`Soal ${i+1}: benar pada percobaan ke-${x.tries||1}`),
+    conclusion:state.conclusion.trim(),reflection:state.reflection.trim(),steps:state.log.map(l=>`${l.step}: ${l.text}`)};
+}
+function buildReport(){
+  const L=[];
+  L.push('LAPORAN PRAKTIKUM VIRTUAL');L.push('Uji Golongan Darah ABO dan Rhesus');L.push('');
+  L.push(`Nama  : ${state.nama.trim()||'(belum diisi)'}`);L.push(`Kelas : ${state.kelas.trim()||'(belum diisi)'}`);L.push('');
+  L.push(`Prediksi awal : ${PRED[state.prediction]||'-'}${state.prediction==='gumpal'?' (sesuai hasil)':' (belum sesuai hasil)'}`);
+  L.push(`Alasan        : ${state.reason.trim()||'-'}`);
+  L.push(`Skor kuis     : ${state.quizDone?state.score+'/3':'belum dikerjakan'}`);
+  if(state.quizDone)QUIZ.forEach((q,i)=>{const v=state.quiz[q.id];L.push(`  Soal ${i+1}: ${Array.isArray(v)?v.join(' dan '):v} (${quizRight(q,v)?'benar':'salah'})`)});
+  state.runs.forEach((r,k)=>{
+    L.push('');L.push(`--- Pasien ${k+1}: ${r.code} (${r.age} th) ---`);
+    L.push(`Selesai       : ${fmtTime(r.at)}`);
+    L.push(`Hasil         : ${r.type}`);
+    L.push(`Pola reaksi   : ${r.pattern.join('; ')}`);
+    L.push(`Penentuan S4  : tepat pada percobaan ke-${r.tries4}`);
+    L.push('Analisis      : '+(r.analysis.length?r.analysis.join('; '):'-'));
+    L.push(`Kesimpulan    : ${r.conclusion||'-'}`);
+    L.push(`Refleksi      : ${r.reflection||'-'}`);
+    L.push('Langkah diulang: '+(r.steps.length?'':'tidak ada'));
+    r.steps.forEach(s=>L.push('  - '+s));
+  });
+  return L.join('\n');
+}
 
 /* ---------- init ---------- */
 const B=$('#bench');
 B.addEventListener('click',e=>{const g=e.target.closest&&e.target.closest('[data-well]');if(g)onWell(+g.dataset.well)});
 B.addEventListener('keydown',e=>{if(e.key!=='Enter'&&e.key!==' ')return;const g=e.target.closest&&e.target.closest('[data-well]');if(g){e.preventDefault();onWell(+g.dataset.well)}});
+const restored=load();
+const rs=$('#restart');let rsT=0;
+rs.addEventListener('click',()=>{
+  if(!rs.dataset.armed){rs.dataset.armed='1';rs.textContent='Ketuk lagi untuk menghapus progres';clearTimeout(rsT);rsT=setTimeout(()=>{delete rs.dataset.armed;rs.textContent='Mulai ulang'},4000);return}
+  delete rs.dataset.armed;rs.textContent='Mulai ulang';try{localStorage.removeItem(KEY)}catch(_){}
+  Object.assign(state,{step:'s1',prediction:null,reason:'',nama:'',kelas:'',history:[],runs:[],quiz:{q1:null,q2:[],q3:null},quizDone:false,score:0});resetRun();go('s1');
+});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')save()});
 render();
+if(restored&&state.step!=='s1')say('Progres praktikummu sebelumnya dipulihkan. Lanjutkan dari langkah ini.','info');
 })();
 </script>
