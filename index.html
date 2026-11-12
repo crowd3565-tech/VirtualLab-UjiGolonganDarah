@@ -1,0 +1,924 @@
+<title>Lab Uji Golongan Darah</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: meja lab (benda nyata) di kiri, lembar kerja siswa di kanan; bertumpuk di ponsel */
+:root{
+  --paper:#eef1f2; --panel:#fbfcfc; --ink:#172126; --muted:#55636a; --line:#cfd7da;
+  --bench:#c7d0d4; --bench-hi:rgba(255,255,255,.55); --bench-lo:rgba(0,0,0,.10);
+  --accent:#a3142a; --on-accent:#fff7f6; --accent-soft:#f7e3e6;
+  --info:#1d5a85; --info-bg:#e2eef6; --ok:#1c6e46; --ok-bg:#e1f2e8; --warn:#7d5200; --warn-bg:#fff1d2;
+  --disabled:#dde3e5; --disabled-ink:#5a666b; --sheet:#fffefb; --shadow:rgba(23,33,38,.12);
+  --f-body:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --f-head:'IBM Plex Sans Condensed','IBM Plex Sans','Arial Narrow',sans-serif;
+  --f-mono:'IBM Plex Mono',ui-monospace,'SFMono-Regular',Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#12171a; --panel:#1a2125; --ink:#e4eaec; --muted:#9aa9af; --line:#2c363b;
+  --bench:#283035; --bench-hi:rgba(255,255,255,.06); --bench-lo:rgba(0,0,0,.35);
+  --accent:#e5526a; --on-accent:#1a0508; --accent-soft:#3a1a20;
+  --info:#7db8e6; --info-bg:#16283a; --ok:#6fd09c; --ok-bg:#14301f; --warn:#f2c46b; --warn-bg:#36290f;
+  --disabled:#283035; --disabled-ink:#9aa8ad; --sheet:#1e2529; --shadow:rgba(0,0,0,.4); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#12171a; --panel:#1a2125; --ink:#e4eaec; --muted:#9aa9af; --line:#2c363b;
+  --bench:#283035; --bench-hi:rgba(255,255,255,.06); --bench-lo:rgba(0,0,0,.35);
+  --accent:#e5526a; --on-accent:#1a0508; --accent-soft:#3a1a20;
+  --info:#7db8e6; --info-bg:#16283a; --ok:#6fd09c; --ok-bg:#14301f; --warn:#f2c46b; --warn-bg:#36290f;
+  --disabled:#283035; --disabled-ink:#9aa8ad; --sheet:#1e2529; --shadow:rgba(0,0,0,.4); color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.5}
+.wrap{max-width:1320px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:16px 48px}
+h1,h2,h3{font-family:var(--f-head);text-wrap:balance;margin:0;line-height:1.1}
+p{margin:0}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:600}
+.muted{color:var(--muted)}
+.mono{font-family:var(--f-mono)}
+
+/* header */
+.top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 24px}
+.brand{display:flex;align-items:center;gap:12px;min-width:0}
+.brand-mark{width:34px;height:34px;flex:none}
+.brand b{font-family:var(--f-head);font-size:20px;display:block;line-height:1.1}
+.brand span{font-size:13px;color:var(--muted)}
+.chip{font-family:var(--f-mono);font-size:13px;padding:6px 12px;border:1px solid var(--line);border-radius:999px;background:var(--panel)}
+.stepper-wrap{width:100%;overflow-x:auto;margin-top:14px}
+.stepper{display:flex;gap:6px;list-style:none;margin:0;padding:0 0 4px;min-width:max-content}
+.step{display:flex;align-items:baseline;gap:6px;padding:6px 12px;border-radius:999px;border:1px solid var(--line);color:var(--muted);font-size:13px;background:var(--panel)}
+.step .code{font-family:var(--f-mono);font-weight:600;font-size:12px}
+.step.done{color:var(--ok);border-color:transparent;background:var(--ok-bg)}
+.step.now{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+
+/* app grid */
+.app{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:20px;margin-top:16px;align-items:start}
+@media (max-width:940px){.app{grid-template-columns:minmax(0,1fr)}}
+.bench{position:relative;border-radius:20px;padding:22px;display:flex;flex-direction:column;gap:20px;min-width:0;
+  background:
+    radial-gradient(120% 70% at 30% 0%,var(--bench-hi),transparent 60%),
+    linear-gradient(180deg,transparent 70%,var(--bench-lo)),
+    var(--bench);
+  box-shadow:inset 0 1px 0 var(--bench-hi),inset 0 -2px 0 var(--bench-lo),0 1px 2px var(--shadow)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:22px;display:flex;flex-direction:column;gap:16px;min-width:0}
+.panel h2{font-size:28px}
+.panel .lead{color:var(--muted)}
+@media (min-width:941px){.panel{position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px);max-height:calc(100dvh - 24px - env(safe-area-inset-top,0px));overflow-y:auto;overscroll-behavior:contain}}
+
+/* bench contents */
+.bench-head{display:flex;flex-direction:column;gap:8px}
+.bench-head h1{font-size:clamp(28px,4.4vw,46px);letter-spacing:-.01em}
+.tag{align-self:flex-start;font-size:14px;font-weight:600;color:var(--info);background:var(--info-bg);padding:5px 12px;border-radius:999px}
+.rack{display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-end;gap:10px 22px;padding:6px 0 0}
+.item{display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:2px solid transparent;border-radius:14px;padding:6px 6px 4px;color:var(--ink);font:inherit;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.item.drag{cursor:grab}
+.item.drag:hover{background:var(--bench-hi)}
+.item.sel{border-color:var(--accent);background:var(--bench-hi)}
+.item.lifted{opacity:.45}
+.item .cap{font-family:var(--f-mono);font-size:12px;font-weight:600}
+.item svg{display:block;max-width:100%;height:auto}
+.plate-host{width:100%}
+.plate{display:block;width:100%;max-width:780px;height:auto;margin:0 auto;overflow:visible}
+.well{cursor:pointer;outline:none}
+.well:focus-visible .rim{stroke:var(--accent);stroke-width:5}
+.well.hover .rim{stroke:#a3142a;stroke-width:5}
+.well.flag .rim{stroke:#c98a12;stroke-width:6}
+.well.blink .rim{animation:blink .45s ease-in-out 6}
+@keyframes blink{50%{stroke:#c98a12;stroke-width:8}}
+.rod.spin{animation:spin .55s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.clumps{animation:fadein 1.2s ease-out both}
+@keyframes fadein{from{opacity:0}to{opacity:1}}
+.timer{align-self:center;font-family:var(--f-mono);font-size:15px;font-weight:600;padding:8px 14px;border-radius:10px;background:var(--panel);border:1px solid var(--line);font-variant-numeric:tabular-nums}
+.timer.run{color:var(--accent)}
+.timer.end{color:var(--ok)}
+.qcard{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;display:flex;flex-direction:column;gap:6px}
+.qcard p{font-size:17px;max-width:62ch}
+
+/* microscope */
+.scope{display:flex;flex-wrap:wrap;gap:18px;align-items:center;justify-content:center}
+.eyepiece{position:relative;width:min(340px,100%);aspect-ratio:1;max-width:100%;border-radius:50%;background:#0d0f10;padding:10px;box-shadow:0 10px 26px rgba(0,0,0,.35),inset 0 0 0 3px #2a2e30}
+.eyepiece canvas{width:100%;height:100%;border-radius:50%;display:block}
+.scope-info{display:flex;flex-direction:column;gap:8px;max-width:280px;min-width:0}
+.scope-cap{font-family:var(--f-mono);font-size:13px;font-weight:600}
+.legend{display:flex;flex-direction:column;gap:6px;font-size:14px;color:var(--muted)}
+.legend span{display:flex;align-items:center;gap:8px}
+.legend i{display:inline-block;flex:none}
+.lg-cell{width:16px;height:16px;border-radius:50%;background:radial-gradient(circle,#f1b0b0 0 30%,#c92d3e 65%,#8e1220)}
+.lg-ab{width:16px;height:16px;background:no-repeat center/contain url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8 9v6M8 9L3 3M8 9l5-6' stroke='%232c63a8' stroke-width='2.4' fill='none' stroke-linecap='round'/%3E%3C/svg%3E")}
+
+/* panel widgets */
+.btn{font:600 15px/1.2 var(--f-body);padding:12px 18px;border-radius:10px;border:1px solid var(--accent);background:var(--accent);color:var(--on-accent);cursor:pointer;min-height:44px}
+.btn:hover{filter:brightness(1.06)}
+.btn.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+.btn[aria-disabled="true"]{background:var(--disabled);border-color:var(--disabled);color:var(--disabled-ink);cursor:not-allowed;filter:none}
+.btn:focus-visible,.opt:focus-visible,.pcard:focus-visible,.item:focus-visible,.seg button:focus-visible,.chipbtn:focus-visible{outline:3px solid var(--info);outline-offset:2px}
+.actions{display:flex;flex-wrap:wrap;gap:10px;justify-content:flex-end}
+.msg{border-radius:10px;padding:10px 14px;font-size:15px}
+.msg.warn{background:var(--warn-bg);color:var(--warn)}
+.msg.ok{background:var(--ok-bg);color:var(--ok)}
+.msg.info{background:var(--info-bg);color:var(--info)}
+fieldset{border:0;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;min-width:0}
+legend{font-weight:600;padding:0;margin-bottom:8px}
+.radio{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;cursor:pointer}
+.radio:has(input:checked){border-color:var(--accent);background:var(--accent-soft)}
+.radio input{accent-color:var(--accent);width:18px;height:18px;margin:0}
+label.field{font-weight:600;display:flex;flex-direction:column;gap:6px}
+textarea{font:inherit;color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:10px 12px;resize:vertical;width:100%}
+textarea:focus{outline:2px solid var(--info);outline-offset:1px}
+details{border:1px solid var(--line);border-radius:10px;padding:10px 14px}
+summary{cursor:pointer;font-weight:600}
+details ol{margin:10px 0 2px;padding-left:20px;display:flex;flex-direction:column;gap:6px;color:var(--muted)}
+.cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.pcard{font:inherit;color:var(--ink);text-align:left;background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:12px;cursor:pointer;display:flex;flex-direction:column;gap:2px;position:relative;overflow:hidden}
+.pcard::before{content:"";position:absolute;inset:0 0 auto;height:5px;background:#8e6fb5}
+.pcard b{font-family:var(--f-mono);font-size:16px;margin-top:4px}
+.pcard span{font-size:14px;color:var(--muted)}
+.pcard[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);box-shadow:0 0 0 1px var(--accent)}
+.status{font-size:15px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.badge{font-family:var(--f-mono);font-size:12px;font-weight:600;padding:4px 10px;border-radius:999px;background:var(--ok-bg);color:var(--ok)}
+.checklist{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.checklist li{font-size:14px;padding:8px 10px;border-radius:8px;background:var(--paper);border:1px solid var(--line);display:flex;justify-content:space-between;gap:6px}
+.checklist li.ok{border-color:transparent;background:var(--ok-bg);color:var(--ok)}
+.checklist .mono{font-weight:600}
+.hold{position:relative;overflow:hidden;width:100%;font:700 17px var(--f-body);padding:18px;border-radius:999px;border:0;background:var(--accent);color:var(--on-accent);cursor:pointer;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.hold .fill{position:absolute;inset:0;transform-origin:left;transform:scaleX(var(--p,0));background:rgba(255,255,255,.28)}
+.hold span{position:relative}
+.hold:focus-visible{outline:3px solid var(--info);outline-offset:3px}
+.obs{display:flex;flex-direction:column;gap:8px}
+.obs-row{display:grid;grid-template-columns:76px minmax(0,1fr);gap:10px;align-items:center;padding:8px;border-radius:10px;border:1px solid var(--line)}
+.obs-row.flag{border-color:#c98a12;background:var(--warn-bg)}
+.obs-row b{font-family:var(--f-mono);font-size:14px}
+.seg{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.seg button{font:500 14px var(--f-body);padding:9px 6px;border:0;background:transparent;color:var(--ink);cursor:pointer}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--paper);font-weight:600}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chipbtn{font:600 16px var(--f-mono);min-width:52px;min-height:44px;padding:8px 14px;border:1px solid var(--line);border-radius:10px;background:var(--paper);color:var(--ink);cursor:pointer}
+.chipbtn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+button:disabled{cursor:default}
+.tbl-wrap{overflow-x:auto}
+table.ref{border-collapse:collapse;width:100%;font-size:13px;font-variant-numeric:tabular-nums}
+table.ref th,table.ref td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+table.ref th{font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+.pos{color:var(--accent);font-weight:600}
+.neg{color:var(--info)}
+.opt{font:inherit;color:var(--ink);text-align:left;width:100%;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:10px 12px;cursor:pointer}
+.opt[aria-pressed="true"].right{border-color:var(--ok);background:var(--ok-bg)}
+.opt[aria-pressed="true"].wrong{border-color:#c98a12;background:var(--warn-bg)}
+.opt:disabled{cursor:default}
+
+/* worksheet */
+.sheet{background:var(--sheet);border-radius:6px;padding:26px 24px;box-shadow:0 12px 30px var(--shadow);display:flex;flex-direction:column;gap:22px;
+  background-image:linear-gradient(transparent 0 calc(100% - 1px),var(--line) 0);background-size:100% 100%}
+.sheet h2{font-size:26px}
+.sheet .q{display:flex;flex-direction:column;gap:8px;padding-top:18px;border-top:1px dashed var(--line)}
+.sheet .q h3{font-family:var(--f-body);font-size:17px;font-weight:600;line-height:1.4;max-width:64ch}
+.sheet .q .n{font-family:var(--f-mono);color:var(--accent);margin-right:6px}
+.obs-sum{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+@media (max-width:520px){.obs-sum{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.obs-sum div{border:1px solid var(--line);border-radius:10px;padding:8px 10px;display:flex;align-items:center;gap:8px;font-size:14px;min-width:0}
+.obs-sum svg{flex:none}
+
+/* id card */
+.idcard{position:relative;max-width:560px;width:100%;margin:0 auto;border-radius:18px;overflow:hidden;color:#1d1416;
+  background:linear-gradient(135deg,#fdfbf8 0%,#f3ece8 55%,#efe3e0 100%);box-shadow:0 18px 40px rgba(0,0,0,.28),inset 0 0 0 1px rgba(0,0,0,.06)}
+.idc-top{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:14px 20px;background:linear-gradient(90deg,#8e0f22,#b3172c);color:#fff3f1;font-family:var(--f-mono);font-size:12px;font-weight:600;letter-spacing:.06em}
+.idc-body{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px;padding:18px 20px 8px;align-items:center}
+.idc-body .lbl{font-family:var(--f-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#6b5a5d}
+.idc-body .val{font-size:18px;font-weight:600;margin-bottom:6px}
+.idc-big{font-family:var(--f-head);font-weight:700;font-size:clamp(56px,10vw,84px);line-height:.9;color:#8e0f22;text-align:right}
+.idc-big small{display:block;font-family:var(--f-body);font-size:16px;font-weight:600;color:#1d1416;margin-top:8px;white-space:nowrap}
+.idc-wells{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;padding:10px 20px 20px}
+.idc-wells div{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:12px;text-align:center}
+.idc-wells b{font-family:var(--f-mono);font-size:12px}
+.stamp{position:absolute;left:58%;top:58%;transform:translate(-50%,-50%) rotate(-12deg);font-family:var(--f-head);font-size:40px;font-weight:700;letter-spacing:.12em;color:#1c6e46;border:4px solid #1c6e46;border-radius:10px;padding:2px 16px;opacity:.82;background:rgba(253,251,248,.6)}
+.sum-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.sum-grid .qcard p{font-size:15px}
+.sum-grid ul{margin:0;padding-left:18px;font-size:14px;color:var(--muted);display:flex;flex-direction:column;gap:4px}
+
+.drag-ghost{position:fixed;left:0;top:0;pointer-events:none;z-index:50;transform:translate(-50%,-94%) rotate(-8deg);filter:drop-shadow(0 8px 10px rgba(0,0,0,.3))}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <svg class="brand-mark" viewBox="0 0 34 34" aria-hidden="true"><path d="M17 3c5 7 10 12.5 10 18a10 10 0 0 1-20 0C7 15.5 12 10 17 3z" fill="#a3142a"/><ellipse cx="13" cy="20" rx="2.6" ry="4" fill="#fff" opacity=".45"/></svg>
+      <div><b>Lab Virtual Golongan Darah</b><span>Uji ABO dan Rhesus · Biologi kelas XI</span></div>
+    </div>
+    <span class="chip" id="chip" hidden></span>
+    <div class="stepper-wrap"><ol class="stepper" id="stepper" aria-label="Langkah praktikum"></ol></div>
+  </header>
+  <main class="app" id="app">
+    <section class="bench" id="bench" aria-label="Meja kerja"></section>
+    <aside class="panel" id="panel" aria-live="polite"></aside>
+  </main>
+</div>
+
+<script>
+(function(){
+"use strict";
+const TAU=Math.PI*2;
+const $=(s,r=document)=>r.querySelector(s);
+const $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
+const ORDER=['s1','s2','s3a','s3b','s3c','s4','s5','s6'];
+const NAMES={s1:'Orientasi',s2:'Sampel',s3a:'Reagen',s3b:'Aduk',s3c:'Amati',s4:'Observasi',s5:'Analisis',s6:'Kesimpulan'};
+const WELLS=['Anti-A','Anti-B','Anti-AB','Anti-D'];
+const LIQ=['#2f6fc0','#e3b62a','#dfe7ea','#dfe7ea'];
+const DROPC=['#2f6fc0','#e3b62a','#c7dbe2','#c7dbe2'];
+const STRIPE=['#2f6fc0','#d4a312','#6f7f86','#8a1526'];
+const TYPES=['A+','A-','B+','B-','AB+','AB-','O+','O-'].map(s=>({abo:s.slice(0,-1),rh:s.slice(-1)}));
+const pat=t=>[t.abo.includes('A'),t.abo.includes('B'),t.abo!=='O',t.rh==='+'];
+const tname=t=>t.abo+' Rh'+(t.rh==='+'?'+':'−');
+const PRED={rata:'Tetap rata',gumpal:'Menggumpal',warna:'Berubah warna'};
+const reduce=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function rng(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;}}
+const rint=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+const WX=i=>118+i*188, WY=160;
+
+/* ---------- state ---------- */
+const state={step:'s1',prediction:null,reason:'',history:[],quiz:{q1:null,q2:[],q3:null},quizDone:false,score:0};
+function newWells(){return [0,1,2,3].map(()=>({blood:false,reagent:false,prog:0,stirred:false,reacted:false,seen:false}))}
+function makePatients(){
+  const last=state.history[state.history.length-1];
+  const pool=shuffle(TYPES.filter(t=>!last||tname(t)!==tname(last))).slice(0,4);
+  const used=new Set();
+  return pool.map(t=>{let c;do{c='PX-'+rint(101,989)}while(used.has(c));used.add(c);return{code:c,age:rint(16,64),type:t}});
+}
+function resetRun(){
+  Object.assign(state,{patients:makePatients(),pIdx:null,seed:rint(1,1e6),wells:newWells(),sel:null,pending:null,selWell:0,
+    reacting:false,reactLeft:120,viewing:null,obs:[null,null,null,null],abo:null,rh:null,tries4:0,locked4:false,
+    analysis:null,flags:[],blink:false,log:[],conclusion:'',reflection:'',done:false,doneAt:null});
+}
+resetRun();
+const cur=()=>state.pIdx==null?null:state.patients[state.pIdx];
+const curType=()=>cur()&&cur().type;
+const log=(step,text)=>state.log.push({step,text});
+
+/* ---------- SVG assets ---------- */
+function bottleSVG(i){
+  const c=LIQ[i];
+  return `<svg viewBox="0 0 70 140" width="70" height="140" aria-hidden="true"><defs>
+  <linearGradient id="gl${i}" x1="0" x2="1"><stop offset="0" stop-color="#fff" stop-opacity=".6"/><stop offset=".25" stop-color="#fff" stop-opacity=".12"/><stop offset=".8" stop-color="#9fb3bb" stop-opacity=".28"/><stop offset="1" stop-color="#fff" stop-opacity=".5"/></linearGradient>
+  <linearGradient id="lq${i}" x1="0" x2="1"><stop offset="0" stop-color="${c}" stop-opacity=".72"/><stop offset=".5" stop-color="${c}" stop-opacity=".95"/><stop offset="1" stop-color="${c}" stop-opacity=".66"/></linearGradient>
+  <linearGradient id="bu${i}" x1="0" x2="1"><stop offset="0" stop-color="#333"/><stop offset=".35" stop-color="#5e5e5e"/><stop offset="1" stop-color="#1b1b1b"/></linearGradient></defs>
+  <ellipse cx="35" cy="134" rx="28" ry="4" fill="#000" opacity=".2"/>
+  <rect x="27" y="2" width="16" height="30" rx="8" fill="url(#bu${i})"/>
+  <rect x="21" y="30" width="28" height="13" rx="3" fill="#eef0f1" stroke="#b9c0c3"/>
+  <rect x="25" y="43" width="20" height="9" fill="url(#gl${i})" stroke="#a9b8be" stroke-width=".8"/>
+  <rect x="8" y="50" width="54" height="82" rx="13" fill="#f4f8f9" fill-opacity=".35" stroke="#a9b8be"/>
+  <rect x="10" y="68" width="50" height="62" rx="11" fill="url(#lq${i})"/>
+  <rect x="8" y="50" width="54" height="82" rx="13" fill="url(#gl${i})"/>
+  <rect x="12" y="78" width="46" height="34" rx="3" fill="#fbfbf6" stroke="#d3d6d2"/>
+  <rect x="12" y="78" width="46" height="7" rx="2" fill="${STRIPE[i]}"/>
+  <text x="35" y="102" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10.5" font-weight="600" fill="#1d2326">${WELLS[i]}</text>
+  <rect x="14" y="55" width="5" height="70" rx="2.5" fill="#fff" opacity=".5"/>
+  </svg>`;
+}
+function tubeSVG(code){
+  return `<svg viewBox="0 0 54 160" width="54" height="160" aria-hidden="true"><defs>
+  <linearGradient id="tg" x1="0" x2="1"><stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset=".3" stop-color="#fff" stop-opacity=".1"/><stop offset="1" stop-color="#9fb3bb" stop-opacity=".35"/></linearGradient>
+  <linearGradient id="tb" x1="0" x2="1"><stop offset="0" stop-color="#5e0812"/><stop offset=".4" stop-color="#9b1525"/><stop offset="1" stop-color="#4f050e"/></linearGradient>
+  <linearGradient id="tc" x1="0" x2="1"><stop offset="0" stop-color="#6f559a"/><stop offset=".4" stop-color="#a68bd0"/><stop offset="1" stop-color="#57417e"/></linearGradient></defs>
+  <ellipse cx="27" cy="155" rx="20" ry="3.5" fill="#000" opacity=".2"/>
+  <rect x="9" y="2" width="36" height="26" rx="4" fill="url(#tc)"/>
+  <rect x="9" y="21" width="36" height="3" fill="#000" opacity=".15"/>
+  <path d="M13 70h28v66a14 14 0 0 1-28 0z" fill="url(#tb)"/>
+  <path d="M12 28h30v108a15 15 0 0 1-30 0z" fill="url(#tg)" stroke="#a9b8be"/>
+  <rect x="12" y="38" width="30" height="40" fill="#fbfbf6" stroke="#d3d6d2"/>
+  <text x="27" y="51" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="7" fill="#55636a">EDTA</text>
+  <text x="27" y="66" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="8" font-weight="600" fill="#1d2326">${code||'—'}</text>
+  <rect x="15" y="82" width="4" height="58" rx="2" fill="#fff" opacity=".4"/>
+  </svg>`;
+}
+function pipetteSVG(color,w){
+  return `<svg viewBox="0 0 30 130" width="${w||30}" height="${(w||30)*130/30}" aria-hidden="true">
+  <rect x="8" y="0" width="14" height="32" rx="7" fill="#2b2b2b"/><rect x="10" y="4" width="3" height="20" rx="1.5" fill="#fff" opacity=".25"/>
+  <path d="M11 32h8v58l-3 36h-2l-3-36z" fill="#eef5f7" fill-opacity=".75" stroke="#9fb0b6"/>
+  <path d="M12 96l2.4 28h1.2L18 96z" fill="${color}"/>
+  <rect x="12.5" y="36" width="1.6" height="52" fill="#fff" opacity=".7"/></svg>`;
+}
+function miniWell(pos,size){
+  const s=size||40;
+  const dots=pos?[[14,15,4],[25,13,3.5],[20,26,4.5],[29,25,3],[12,26,2.5],[23,20,2]].map(d=>`<circle cx="${d[0]}" cy="${d[1]}" r="${d[2]}" fill="#7a0b19"/>`).join(''):'';
+  return `<svg viewBox="0 0 40 40" width="${s}" height="${s}" aria-hidden="true"><circle cx="20" cy="20" r="19" fill="#e3e7e9" stroke="#bfc6c9"/><circle cx="20" cy="20" r="15" fill="${pos?'#eab0ad':'#a51b2c'}"/>${dots}<ellipse cx="15" cy="13" rx="5" ry="2.4" fill="#fff" opacity=".4"/></svg>`;
+}
+
+/* ---------- plate ---------- */
+function clumpsSVG(i,cx,cy){
+  const r=rng(state.seed+i*977); let s='';
+  for(let k=0;k<10;k++){
+    const a=r()*TAU,d=Math.sqrt(r())*38,x=cx+Math.cos(a)*d,y=cy+Math.sin(a)*d,m=3+Math.floor(r()*4);
+    for(let j=0;j<m;j++){const ox=(r()-.5)*14,oy=(r()-.5)*14,rr=3+r()*4.5;s+=`<circle cx="${(x+ox).toFixed(1)}" cy="${(y+oy).toFixed(1)}" r="${rr.toFixed(1)}" fill="${j%3?'#7a0b19':'#951628'}"/>`}
+  }
+  for(let k=0;k<26;k++){const a=r()*TAU,d=Math.sqrt(r())*48;s+=`<circle cx="${(cx+Math.cos(a)*d).toFixed(1)}" cy="${(cy+Math.sin(a)*d).toFixed(1)}" r="1.3" fill="#8f1424" opacity=".7"/>`}
+  return `<g class="clumps">${s}</g>`;
+}
+function plateHTML(){
+  const st=state.step, T=curType(), P=T?pat(T):null;
+  let o=`<svg class="plate" viewBox="0 0 800 310" role="group" aria-label="Plat uji keramik dengan empat sumur">
+  <defs>
+    <linearGradient id="gTile" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#e2e6e8"/></linearGradient>
+    <radialGradient id="gWell" cx=".5" cy=".4" r=".62"><stop offset="0" stop-color="#fbfcfc"/><stop offset=".72" stop-color="#e2e6e8"/><stop offset="1" stop-color="#c3cacd"/></radialGradient>
+    <radialGradient id="gBlood" cx=".42" cy=".36" r=".72"><stop offset="0" stop-color="#c22a3b"/><stop offset=".6" stop-color="#8f1222"/><stop offset="1" stop-color="#58060f"/></radialGradient>
+    <radialGradient id="gMix" cx=".42" cy=".36" r=".72"><stop offset="0" stop-color="#cc3a4a"/><stop offset=".6" stop-color="#9d1d2c"/><stop offset="1" stop-color="#650c17"/></radialGradient>
+    <radialGradient id="gPlasma" cx=".45" cy=".4" r=".72"><stop offset="0" stop-color="#f7d6d1"/><stop offset=".8" stop-color="#e8aba7"/><stop offset="1" stop-color="#c88080"/></radialGradient>
+    <filter id="fSh" x="-10%" y="-10%" width="120%" height="150%"><feDropShadow dx="0" dy="10" stdDeviation="10" flood-color="#000" flood-opacity=".28"/></filter>
+  </defs>
+  <rect x="14" y="44" width="772" height="252" rx="24" fill="url(#gTile)" filter="url(#fSh)"/>
+  <rect x="14.5" y="44.5" width="771" height="251" rx="24" fill="none" stroke="#c4cbce"/>
+  <text x="38" y="70" font-family="IBM Plex Mono, monospace" font-size="12" letter-spacing="2" fill="#7d878c">PLAT UJI KERAMIK · 4 SUMUR</text>`;
+  for(let i=0;i<4;i++){
+    const w=state.wells[i],cx=WX(i),cy=WY;
+    const cls=['well'];
+    if(state.flags.includes(i))cls.push('flag');
+    if(state.blink&&!w.seen)cls.push('blink');
+    o+=`<g class="${cls.join(' ')}" data-well="${i}" tabindex="0" role="button" aria-label="Sumur ${WELLS[i]}${w.blood?', berisi darah':''}${w.reagent?' dan reagen':''}">`;
+    o+=`<circle class="rim" cx="${cx}" cy="${cy}" r="72" fill="url(#gWell)" stroke="#bcc3c6" stroke-width="2"/>`;
+    o+=`<circle cx="${cx}" cy="${cy}" r="64" fill="none" stroke="#fff" stroke-opacity=".7" stroke-width="2"/>`;
+    if(w.reacted&&P){
+      if(P[i]){o+=`<circle cx="${cx}" cy="${cy}" r="56" fill="url(#gPlasma)"/>`+clumpsSVG(i,cx,cy)}
+      else o+=`<circle cx="${cx}" cy="${cy}" r="56" fill="url(#gMix)"/>`;
+    }else if(w.blood){
+      o+=`<circle cx="${cx}" cy="${cy}" r="56" fill="url(#${w.reagent?'gMix':'gBlood'})"/>`;
+      if(w.reagent&&!w.stirred)o+=`<path d="M${cx-30} ${cy+6} q18 -26 44 -10 q14 10 4 26" fill="none" stroke="${i<2?LIQ[i]:'#ffffff'}" stroke-opacity=".7" stroke-width="7" stroke-linecap="round"/>`;
+    }
+    if(w.blood||w.reacted)o+=`<ellipse cx="${cx-20}" cy="${cy-24}" rx="18" ry="8" fill="#fff" opacity=".32" transform="rotate(-25 ${cx-20} ${cy-24})"/>`;
+    o+=`<rect x="${cx-46}" y="265" width="9" height="9" rx="2" fill="${STRIPE[i]}"/>`;
+    o+=`<text x="${cx+6}" y="274" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="18" font-weight="600" fill="#26303a">${WELLS[i].toUpperCase()}</text>`;
+    if(st==='s3b'){
+      const C=2*Math.PI*80;
+      o+=`<circle id="ring${i}" cx="${cx}" cy="${cy}" r="80" fill="none" stroke="#1c6e46" stroke-width="5" stroke-linecap="round" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${(C*(1-(w.stirred?1:w.prog))).toFixed(1)}" transform="rotate(-90 ${cx} ${cy})"/>`;
+      if(state.selWell===i&&!state.reacting&&!w.reacted)o+=`<circle cx="${cx}" cy="${cy}" r="88" fill="none" stroke="#a3142a" stroke-width="2.5" stroke-dasharray="6 6"/>`;
+      if(state.selWell===i&&!w.reacted)o+=`<g class="rod" id="rod${i}" style="transform-origin:${cx}px ${cy}px"><rect x="${cx-3.5}" y="${cy-100}" width="7" height="118" rx="3.5" fill="#e6eef1" fill-opacity=".9" stroke="#8fa3aa"/><rect x="${cx-1.5}" y="${cy-96}" width="1.6" height="108" fill="#fff"/></g>`;
+    }
+    if((st==='s3c'||st==='s4')&&state.viewing===i)o+=`<circle cx="${cx}" cy="${cy}" r="84" fill="none" stroke="#1d5a85" stroke-width="3"/>`;
+    const done=(st==='s2'&&w.blood)||(st==='s3a'&&w.reagent)||(st==='s3b'&&w.stirred);
+    if(done)o+=`<g><circle cx="${cx+52}" cy="${cy-54}" r="14" fill="#1c6e46"/><path d="M${cx+45} ${cy-54}l5 5 9-10" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></g>`;
+    if(st==='s3c'&&w.seen)o+=`<g><circle cx="${cx+52}" cy="${cy-54}" r="14" fill="#1d5a85"/><path d="M${cx+44} ${cy-54}q8-8 16 0q-8 8-16 0z" fill="none" stroke="#fff" stroke-width="2"/><circle cx="${cx+52}" cy="${cy-54}" r="2.4" fill="#fff"/></g>`;
+    if(st==='s3a'&&state.pending&&state.pending.i===i){
+      o+=`<g transform="translate(${cx-15} ${cy-150})">${pipetteSVG(DROPC[state.pending.b]).replace(/<svg[^>]*>/,'').replace('</svg>','')}</g>`;
+      o+=`<text x="${cx}" y="${cy-156}" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="13" font-weight="600" fill="#26303a">pipet ${WELLS[state.pending.b]}</text>`;
+    }
+    o+=`</g>`;
+  }
+  return o+`</svg>`;
+}
+function drawPlate(){const h=$('#plateHost');if(h)h.innerHTML=plateHTML()}
+
+function animateDrop(i,color,cb){
+  const svg=$('#plateHost svg');
+  if(!svg||reduce){cb();return}
+  const ns='http://www.w3.org/2000/svg',cx=WX(i);
+  const d=document.createElementNS(ns,'ellipse');
+  d.setAttribute('cx',cx);d.setAttribute('rx',7);d.setAttribute('ry',9);d.setAttribute('fill',color);d.setAttribute('stroke','rgba(0,0,0,.25)');
+  svg.appendChild(d);
+  const t0=performance.now();
+  (function f(now){
+    const t=Math.min(1,(now-t0)/420);d.setAttribute('cy',(10+(WY-10)*t*t).toFixed(1));
+    if(t<1)return requestAnimationFrame(f);
+    d.remove();
+    const r=document.createElementNS(ns,'circle');r.setAttribute('cx',cx);r.setAttribute('cy',WY);r.setAttribute('fill','none');r.setAttribute('stroke',color);r.setAttribute('stroke-width',3);svg.appendChild(r);
+    const t1=performance.now();
+    (function g(n){const u=Math.min(1,(n-t1)/380);r.setAttribute('r',(8+46*u).toFixed(1));r.setAttribute('opacity',(1-u).toFixed(2));if(u<1)requestAnimationFrame(g);else{r.remove();cb()}})(t1);
+  })(t0);
+}
+
+/* ---------- microscope ---------- */
+const Scope={
+  cv:null,ctx:null,raf:0,cells:[],abs:[],t0:0,dur:2600,animate:true,active:false,
+  mount(cv){
+    this.stop();this.cv=cv;this.active=false;
+    const d=Math.min(2,window.devicePixelRatio||1),S=Math.max(240,cv.clientWidth||320);
+    cv.width=Math.round(S*d);cv.height=Math.round(S*d);
+    this.ctx=cv.getContext('2d');this.ctx.setTransform(cv.width/320,0,0,cv.height/320,0,0);
+    this.drawIdle();
+  },
+  stop(){cancelAnimationFrame(this.raf);this.raf=0},
+  drawIdle(){
+    const c=this.ctx;if(!c)return;
+    this.field();
+    c.fillStyle='#6b5a52';c.font='600 14px "IBM Plex Sans", sans-serif';c.textAlign='center';
+    c.fillText('Ketuk sebuah sumur',160,156);c.fillText('untuk melihat perbesaran',160,176);
+    this.vignette();
+  },
+  field(){
+    const c=this.ctx;c.clearRect(0,0,320,320);c.save();c.beginPath();c.arc(160,160,158,0,TAU);c.clip();
+    const g=c.createRadialGradient(150,140,10,160,160,170);g.addColorStop(0,'#fdf6ee');g.addColorStop(1,'#ead6c6');c.fillStyle=g;c.fillRect(0,0,320,320);c.restore();
+  },
+  vignette(){
+    const c=this.ctx;c.save();c.beginPath();c.arc(160,160,158,0,TAU);c.clip();
+    const v=c.createRadialGradient(160,160,105,160,160,162);v.addColorStop(0,'rgba(20,8,8,0)');v.addColorStop(1,'rgba(20,8,8,.72)');c.fillStyle=v;c.fillRect(0,0,320,320);
+    c.restore();
+  },
+  show(seed,positive,animate){
+    this.stop();if(!this.ctx)return;
+    const r=rng(seed),C=160,R=118;this.cells=[];this.abs=[];this.positive=positive;this.animate=animate&&!reduce;
+    let guard=0;
+    while(this.cells.length<30&&guard++<4000){
+      const a=r()*TAU,d=Math.sqrt(r())*R,x=C+Math.cos(a)*d,y=C+Math.sin(a)*d;
+      if(this.cells.every(c=>Math.hypot(c.sx-x,c.sy-y)>27))this.cells.push({sx:x,sy:y,tx:x,ty:y,rot:r()*TAU,ph:r()*TAU});
+    }
+    if(positive){
+      const off=r()*TAU,centers=[0,1,2,3].map(k=>({x:C+Math.cos(off+k*TAU/4)*58,y:C+Math.sin(off+k*TAU/4)*58,m:[]}));
+      this.cells.forEach(c=>{let b=centers[0],bd=1e9;centers.forEach(z=>{const dd=Math.hypot(z.x-c.sx,z.y-c.sy);if(dd<bd){bd=dd;b=z}});b.m.push(c)});
+      centers.forEach(z=>{
+        z.m.sort((p,q)=>Math.hypot(p.sx-z.x,p.sy-z.y)-Math.hypot(q.sx-z.x,q.sy-z.y));
+        z.m.forEach((c,k)=>{const a=k*2.399,d=18*Math.sqrt(k);c.tx=z.x+Math.cos(a)*d;c.ty=z.y+Math.sin(a)*d});
+        for(let k=1;k<z.m.length;k++){
+          let nb=z.m[0],nd=1e9;for(let j=0;j<k;j++){const dd=Math.hypot(z.m[j].tx-z.m[k].tx,z.m[j].ty-z.m[k].ty);if(dd<nd){nd=dd;nb=z.m[j]}}
+          const mx=(nb.tx+z.m[k].tx)/2,my=(nb.ty+z.m[k].ty)/2,ang=Math.atan2(z.m[k].ty-nb.ty,z.m[k].tx-nb.tx);
+          const a=r()*TAU,d=Math.sqrt(r())*130;
+          this.abs.push({sx:C+Math.cos(a)*d,sy:C+Math.sin(a)*d,tx:mx,ty:my,rot:ang+Math.PI/2,r0:r()*TAU,ph:r()*TAU,bound:true});
+        }
+      });
+      for(let k=0;k<6;k++){const a=r()*TAU,d=Math.sqrt(r())*130;this.abs.push({sx:C+Math.cos(a)*d,sy:C+Math.sin(a)*d,rot:r()*TAU,ph:r()*TAU,bound:false})}
+    }else{
+      for(let k=0;k<20;k++){const a=r()*TAU,d=Math.sqrt(r())*130;this.abs.push({sx:C+Math.cos(a)*d,sy:C+Math.sin(a)*d,rot:r()*TAU,ph:r()*TAU,bound:false})}
+    }
+    this.t0=performance.now();this.active=true;
+    const loop=now=>{this.frame(now);this.raf=requestAnimationFrame(loop)};
+    if(reduce){this.frame(this.t0+this.dur)}else this.raf=requestAnimationFrame(loop);
+  },
+  cell(x,y,rot){
+    const c=this.ctx;c.save();c.translate(x,y);c.rotate(rot);c.scale(1,.9);
+    const g=c.createRadialGradient(-1.5,-1.5,1,0,0,12);g.addColorStop(0,'#f2b6b4');g.addColorStop(.35,'#e47b82');g.addColorStop(.72,'#c92d3e');g.addColorStop(1,'#8e1220');
+    c.shadowColor='rgba(90,0,10,.28)';c.shadowBlur=4;c.shadowOffsetY=1.5;
+    c.beginPath();c.arc(0,0,11.5,0,TAU);c.fillStyle=g;c.fill();c.restore();
+  },
+  y(x,y,rot,a){
+    const c=this.ctx;c.save();c.translate(x,y);c.rotate(rot);c.globalAlpha=a==null?1:a;
+    c.strokeStyle='#2c63a8';c.lineWidth=2.3;c.lineCap='round';
+    c.beginPath();c.moveTo(0,1);c.lineTo(0,8);c.moveTo(0,1);c.lineTo(-4.6,-4.5);c.moveTo(0,1);c.lineTo(4.6,-4.5);c.stroke();c.restore();
+  },
+  frame(now){
+    const t=this.animate?Math.min(1,(now-this.t0)/this.dur):1,e=t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2,c=this.ctx;
+    this.field();
+    c.save();c.beginPath();c.arc(160,160,158,0,TAU);c.clip();
+    const jit=k=>Math.sin(now/900+k)*(this.positive?(1-e)*1.4+.25:1.2);
+    this.cells.forEach(p=>this.cell(p.sx+(p.tx-p.sx)*e+jit(p.ph),p.sy+(p.ty-p.sy)*e+jit(p.ph+2),p.rot));
+    this.abs.forEach(a=>{
+      if(a.bound){const u=Math.min(1,e*1.15);this.y(a.sx+(a.tx-a.sx)*u,a.sy+(a.ty-a.sy)*u,a.r0+(a.rot-a.r0)*u)}
+      else this.y(a.sx+Math.sin(now/1400+a.ph)*7,a.sy+Math.cos(now/1700+a.ph)*7,a.rot+Math.sin(now/2000+a.ph)*.6,.85);
+    });
+    c.fillStyle='#2a1f1c';c.fillRect(214,268,29,3);
+    c.font='600 11px "IBM Plex Mono", monospace';c.textAlign='center';c.fillText('10 µm',228.5,262);
+    c.restore();this.vignette();
+  }
+};
+
+/* ---------- helpers ---------- */
+const bench=()=>$('#bench'), panel=()=>$('#panel');
+function say(text,kind){const m=$('#msg');if(!m)return;m.className='msg '+(kind||'info');m.innerHTML=text;m.hidden=false}
+function gate(id,label,ok,reason,extra){return `<button type="button" class="btn ${extra||''}" id="${id}" aria-disabled="${!ok}" data-reason="${esc(reason)}">${label}</button>`}
+function bindGate(id,fn,onBlocked){const b=$('#'+id);if(!b)return;b.addEventListener('click',()=>{if(b.getAttribute('aria-disabled')==='true'){say(b.dataset.reason,'warn');if(onBlocked)onBlocked();return}fn()})}
+function setGate(id,ok){const b=$('#'+id);if(b)b.setAttribute('aria-disabled',String(!ok))}
+const count=k=>state.wells.filter(w=>w[k]).length;
+function go(step){
+  Scope.stop();state.step=step;state.sel=null;state.blink=false;render();
+  const top=$('#app').getBoundingClientRect().top+window.scrollY-12;
+  if(window.scrollY>top)window.scrollTo({top,behavior:reduce?'auto':'smooth'});
+}
+function renderStepper(){
+  const k=ORDER.indexOf(state.step);
+  $('#stepper').innerHTML=ORDER.map((s,i)=>`<li class="step ${i<k?'done':i===k?'now':''}"${i===k?' aria-current="step"':''}><span class="code">${s.toUpperCase()}</span><span>${NAMES[s]}</span></li>`).join('');
+  const p=cur(),chip=$('#chip');chip.hidden=!p;if(p)chip.innerHTML=`Pasien <b>${p.code}</b> · ${p.age} th`;
+}
+function render(){renderStepper();VIEWS[state.step]()}
+
+/* ---------- drag & tap ---------- */
+let drag=null,suppress=false;
+function bindItem(el,kind,payload){
+  el.addEventListener('pointerdown',e=>{if(e.button!==0)return;drag={el,kind,payload,x:e.clientX,y:e.clientY,moved:false,ghost:null};try{el.setPointerCapture(e.pointerId)}catch(_){}});
+  el.addEventListener('pointermove',e=>{
+    if(!drag||drag.el!==el)return;
+    if(!drag.moved&&Math.hypot(e.clientX-drag.x,e.clientY-drag.y)>6){
+      if(kind==='tube'&&!cur()){say('Pilih kartu pasien dulu.','warn');drag=null;return}
+      drag.moved=true;const g=document.createElement('div');g.className='drag-ghost';
+      g.innerHTML=pipetteSVG(kind==='tube'?'#8f1222':DROPC[payload],34);document.body.appendChild(g);drag.ghost=g;el.classList.add('lifted');
+    }
+    if(drag.moved){
+      drag.ghost.style.left=e.clientX+'px';drag.ghost.style.top=e.clientY+'px';
+      $$('.well.hover').forEach(w=>w.classList.remove('hover'));const w=wellAt(e.clientX,e.clientY);if(w)w.classList.add('hover');
+    }
+  });
+  const end=e=>{
+    if(!drag||drag.el!==el)return;const d=drag;drag=null;el.classList.remove('lifted');
+    if(!d.moved)return;
+    d.ghost.remove();suppress=true;setTimeout(()=>{suppress=false},50);
+    $$('.well.hover').forEach(w=>w.classList.remove('hover'));
+    const w=e.type==='pointerup'?wellAt(e.clientX,e.clientY):null;
+    if(w)dropOn(kind,payload,+w.dataset.well);else if(e.type==='pointerup')say('Lepaskan pipet tepat di atas salah satu sumur.','info');
+  };
+  el.addEventListener('pointerup',end);el.addEventListener('pointercancel',end);
+  el.addEventListener('click',()=>{if(suppress)return;selectItem(kind,payload)});
+}
+function wellAt(x,y){const t=document.elementFromPoint(x,y);return t&&t.closest?t.closest('[data-well]'):null}
+function selectItem(kind,payload){
+  if(kind==='tube'){
+    if(!cur()){say('Pilih kartu pasien dulu.','warn');return}
+    state.sel=state.sel==='tube'?null:'tube';
+    say(state.sel?'Tabung darah dipilih. Ketuk sumur yang ingin diisi.':'Pilihan tabung dibatalkan.','info');
+  }else{
+    state.sel=state.sel===payload?null:payload;
+    say(state.sel!=null?`Pipet ${WELLS[payload]} dipilih. Ketuk sumur tujuannya.`:'Pilihan pipet dibatalkan.','info');
+  }
+  $$('.item.drag').forEach(it=>it.classList.toggle('sel',(it.dataset.kind==='tube'&&state.sel==='tube')||(it.dataset.kind==='bottle'&&+it.dataset.i===state.sel)));
+}
+function dropOn(kind,payload,i){if(kind==='tube')dropBlood(i);else park(payload,i)}
+function onWell(i){
+  switch(state.step){
+    case 's2': if(state.sel==='tube')dropBlood(i);else say(cur()?'Seret tetes darah dari tabung ke sumur ini, atau ketuk tabung lalu ketuk sumur.':'Pilih kartu pasien dulu.','info');break;
+    case 's3a': if(state.sel!=null)park(state.sel,i);else say('Seret pipet dari botol reagen ke sumur, atau ketuk botol lalu ketuk sumur.','info');break;
+    case 's3b': if(state.reacting||state.wells[i].reacted)return;state.selWell=i;drawPlate();updS3b();break;
+    case 's3c': case 's4': viewWell(i);break;
+  }
+}
+
+/* ---------- S1 ---------- */
+function rackHTML(drag,withTube,withBottles){
+  let h='<div class="rack">';
+  if(withTube){const p=cur();h+=`<button type="button" class="item ${drag?'drag':''}" data-kind="tube" ${drag?'':'tabindex="-1" disabled'} aria-label="Tabung sampel darah${p?' pasien '+p.code:''}">${tubeSVG(p&&p.code)}<span class="cap">Sampel darah</span></button>`}
+  if(withBottles)for(let i=0;i<4;i++)h+=`<button type="button" class="item ${drag?'drag':''}" data-kind="bottle" data-i="${i}" ${drag?'':'tabindex="-1" disabled'} aria-label="Botol serum ${WELLS[i]} dengan pipet">${bottleSVG(i)}<span class="cap">Serum ${WELLS[i]}</span></button>`;
+  return h+'</div>';
+}
+const VIEWS={};
+VIEWS.s1=function(){
+  bench().innerHTML=`<div class="bench-head"><p class="eyebrow">Praktikum virtual · Sistem peredaran darah</p><h1>Uji Golongan Darah ABO dan Rhesus</h1><span class="tag">Tanpa jarum dan tanpa darah asli</span></div>
+  ${rackHTML(false,true,true)}<div class="plate-host" id="plateHost"></div>
+  <div class="qcard"><span class="eyebrow">Pertanyaan penyelidikan</span><p>Mengapa darah pasien hanya menggumpal pada sumur reagen tertentu, dan bagaimana pola penggumpalan itu menentukan golongan darah ABO serta Rhesus pasien secara akurat?</p></div>`;
+  drawPlate();
+  panel().innerHTML=`<p class="eyebrow">S1 · Orientasi dan prediksi</p><h2>Buat prediksi sebelum mulai</h2>
+  <details><summary>Tujuan praktikum</summary><ol>
+    <li>Menentukan golongan darah (A, B, AB, O) dan Rhesus (+/−) sampel pasien virtual dari pola aglutinasi pada empat sumur uji.</li>
+    <li>Menganalisis hubungan aglutinogen (antigen) pada sel darah merah, aglutinin (antibodi) pada serum reagen, dan reaksi penggumpalan.</li>
+    <li>Menjelaskan pentingnya ketepatan uji golongan darah dalam kehidupan sehari-hari.</li></ol></details>
+  <fieldset><legend>Apa yang terjadi jika darah bertemu serum yang sesuai?</legend>
+    ${Object.keys(PRED).map(k=>`<label class="radio"><input type="radio" name="pred" id="pred-${k}" value="${k}" ${state.prediction===k?'checked':''}> ${PRED[k]}</label>`).join('')}
+  </fieldset>
+  <label class="field" for="reason">Alasanmu <span class="muted" style="font-weight:400">(boleh singkat)</span><textarea id="reason" rows="3" placeholder="Menurutku begitu karena…">${esc(state.reason)}</textarea></label>
+  <div class="msg" id="msg" hidden></div>
+  <div class="actions">${gate('start','Mulai praktikum',!!state.prediction,'Pilih satu prediksi dulu.')}</div>`;
+  $$('input[name=pred]').forEach(r=>r.addEventListener('change',()=>{state.prediction=r.value;setGate('start',true);$('#msg').hidden=true}));
+  $('#reason').addEventListener('input',e=>{state.reason=e.target.value});
+  bindGate('start',()=>go('s2'));
+};
+
+/* ---------- S2 ---------- */
+function dropBlood(i){
+  if(!cur()){say('Pilih kartu pasien dulu.','warn');return}
+  const w=state.wells[i];
+  if(w.blood){say(`Sumur ${WELLS[i]} sudah berisi darah. Pilih sumur yang masih kosong.`,'warn');log('S2',`Sumur ${WELLS[i]} ditetesi darah dua kali`);return}
+  animateDrop(i,'#8f1222',()=>{w.blood=true;drawPlate();updS2();
+    const n=count('blood');say(n===4?'Plat siap. Keempat sumur sudah berisi darah.':`Darah masuk ke sumur ${WELLS[i]}. ${4-n} sumur lagi.`,n===4?'ok':'info')});
+}
+function updS2(){
+  const n=count('blood');
+  $('#s2status').innerHTML=`<span><b>${n}</b>/4 sumur berisi darah</span>${n===4?'<span class="badge">Plat siap</span>':''}`;
+  setGate('toS3a',n===4);
+  $$('.pcard').forEach((c,k)=>c.setAttribute('aria-pressed',String(k===state.pIdx)));
+  const tube=$('.item[data-kind=tube]');if(tube){tube.querySelector('svg').outerHTML=tubeSVG(cur()&&cur().code)}
+  renderStepper();
+}
+VIEWS.s2=function(){
+  bench().innerHTML=`${rackHTML(true,true,false)}<div class="plate-host" id="plateHost"></div>`;
+  drawPlate();
+  panel().innerHTML=`<p class="eyebrow">S2 · Persiapan</p><h2>Pilih sampel pasien</h2>
+  <p class="lead">Golongan darah pasien disembunyikan. Pilih satu kartu, lalu seret tetes darah dari tabung ke setiap sumur. Di layar sentuh, ketuk tabung lalu ketuk sumur.</p>
+  <div class="cards">${state.patients.map((p,k)=>`<button type="button" class="pcard" data-k="${k}" aria-pressed="${k===state.pIdx}"><b>${p.code}</b><span>Umur ${p.age} tahun</span><span>Golongan: ?</span></button>`).join('')}</div>
+  <div class="actions" style="justify-content:flex-start"><button type="button" class="btn ghost" id="acak">Acak pasien</button></div>
+  <p class="status" id="s2status"></p>
+  <div class="msg" id="msg" hidden></div>
+  <div class="actions">${gate('toS3a','Lanjut',false,'Isi keempat sumur dengan darah dulu.')}</div>`;
+  const pick=k=>{
+    if(count('blood')>0&&k!==state.pIdx){say(`Darah pasien ${cur().code} sudah diteteskan. Lanjutkan dengan pasien ini.`,'warn');return}
+    state.pIdx=k;updS2();say(`Pasien ${cur().code} dipilih. Sekarang seret tetes darah ke keempat sumur.`,'info');
+  };
+  $$('.pcard').forEach(c=>c.addEventListener('click',()=>pick(+c.dataset.k)));
+  $('#acak').addEventListener('click',()=>{if(count('blood')>0){pick(-1);return}pick(rint(0,3))});
+  bindItem($('.item[data-kind=tube]'),'tube');
+  bindGate('toS3a',()=>go('s3a'));
+  updS2();
+};
+
+/* ---------- S3a ---------- */
+function park(b,i){
+  state.pending={b,i};state.sel=null;
+  $$('.item.drag').forEach(it=>it.classList.remove('sel'));
+  drawPlate();updS3a();say(`Pipet ${WELLS[b]} berada di atas sumur ${WELLS[i]}. Tekan <b>Teteskan</b>.`,'info');
+}
+function teteskan(){
+  const {b,i}=state.pending,w=state.wells[i];
+  if(b!==i){state.pending=null;drawPlate();updS3a();say('Label reagen tidak sama dengan label sumur. Periksa lagi label sumurnya.','warn');log('S3a',`Pipet ${WELLS[b]} diarahkan ke sumur ${WELLS[i]}`);return}
+  if(w.reagent){state.pending=null;drawPlate();updS3a();say('Sumur ini sudah diberi reagen.','warn');log('S3a',`Sumur ${WELLS[i]} hendak ditetesi reagen dua kali`);return}
+  state.pending=null;drawPlate();updS3a();
+  animateDrop(i,DROPC[b],()=>{w.reagent=true;drawPlate();updS3a();const n=count('reagent');
+    say(n===4?'Keempat sumur sudah berisi reagen. Tekan <b>Aduk</b>.':`Serum ${WELLS[i]} masuk ke sumur ${WELLS[i]}.`,n===4?'ok':'info')});
+}
+function updS3a(){
+  const p=state.pending;
+  $('#pend').innerHTML=p?`Pipet <b class="mono">${WELLS[p.b]}</b> di atas sumur <b class="mono">${WELLS[p.i]}</b>`:'Belum ada pipet di atas sumur.';
+  setGate('drip',!!p);setGate('toS3b',count('reagent')===4);
+  $('#s3alist').innerHTML=state.wells.map((w,k)=>`<li class="${w.reagent?'ok':''}"><span class="mono">${WELLS[k]}</span><span>${w.reagent?'darah + serum':'darah'}</span></li>`).join('');
+}
+VIEWS.s3a=function(){
+  bench().innerHTML=`${rackHTML(true,false,true)}<div class="plate-host" id="plateHost"></div>`;
+  drawPlate();
+  panel().innerHTML=`<p class="eyebrow">S3a · Prosedur</p><h2>Teteskan serum reagen</h2>
+  <p class="lead">Seret pipet dari tiap botol ke sumur yang labelnya sama, lalu tekan Teteskan. Bisa juga dengan mengetuk botol, lalu mengetuk sumur.</p>
+  <p class="status" id="pend"></p>
+  <div class="actions" style="justify-content:flex-start">${gate('drip','Teteskan',false,'Seret pipet dari botol ke salah satu sumur dulu.')}</div>
+  <ul class="checklist" id="s3alist"></ul>
+  <div class="msg" id="msg" hidden></div>
+  <div class="actions">${gate('toS3b','Aduk',false,'Teteskan keempat reagen dulu.')}</div>`;
+  $$('.item[data-kind=bottle]').forEach(el=>bindItem(el,'bottle',+el.dataset.i));
+  bindGate('drip',teteskan);bindGate('toS3b',()=>go('s3b'));
+  updS3a();
+};
+
+/* ---------- S3b ---------- */
+let hold=null;
+function updS3b(){
+  const n=count('stirred');
+  $('#selname').textContent=state.reacting||state.wells.every(w=>w.reacted)?'—':WELLS[state.selWell];
+  $('#s3blist').innerHTML=state.wells.map((w,k)=>`<li class="${w.stirred?'ok':''}"><span class="mono">${WELLS[k]}</span><span>${w.stirred?'sudah diaduk':'belum'}</span></li>`).join('');
+  setGate('toS3c',state.wells.every(w=>w.reacted));
+  const hb=$('#hold');if(hb){hb.disabled=n===4;hb.querySelector('span:last-child').textContent=n===4?'Semua sumur sudah diaduk':'Tahan untuk mengaduk'}
+  updTimer();
+}
+function updTimer(){
+  const t=$('#timer');if(!t)return;const s=state.reactLeft;
+  const mm=String(Math.floor(s/60)).padStart(2,'0'),ss=String(s%60).padStart(2,'0');
+  const done=state.wells.every(w=>w.reacted);
+  t.className='timer'+(state.reacting?' run':done?' end':'');
+  t.textContent=done?'Reaksi selesai · 00:00':state.reacting?`Waktu reaksi ${mm}:${ss} · dipercepat ×30`:'Waktu reaksi 02:00 · mulai setelah 4 sumur diaduk';
+}
+function holdStart(e){
+  if(e)e.preventDefault();
+  if(hold||state.reacting||count('stirred')===4)return;
+  const i=state.selWell,w=state.wells[i];
+  if(w.stirred){say('Sumur ini sudah diaduk. Pilih sumur lain di plat.','info');return}
+  const rod=$('#rod'+i);if(rod&&!reduce)rod.classList.add('spin');
+  hold={i,t0:performance.now(),raf:0};
+  const C=2*Math.PI*80;
+  const f=now=>{
+    if(!hold)return;const p=Math.min(1,(now-hold.t0)/3000);w.prog=p;
+    const ring=$('#ring'+i);if(ring)ring.setAttribute('stroke-dashoffset',(C*(1-p)).toFixed(1));
+    const hb=$('#hold');if(hb)hb.style.setProperty('--p',p);
+    if(p>=1){hold=null;w.stirred=true;if(hb)hb.style.setProperty('--p',0);
+      const next=state.wells.findIndex(x=>!x.stirred);if(next>=0)state.selWell=next;
+      drawPlate();updS3b();
+      if(next<0){say('Keempat sumur sudah tercampur rata. Tunggu waktu reaksi selesai.','ok');startReaction()}
+      else say(`Sumur ${WELLS[i]} tercampur rata. Lanjut ke sumur ${WELLS[next]}.`,'ok');
+      return}
+    hold.raf=requestAnimationFrame(f);
+  };
+  hold.raf=requestAnimationFrame(f);
+}
+function holdEnd(){
+  if(!hold)return;const {i,raf}=hold;cancelAnimationFrame(raf);hold=null;
+  const w=state.wells[i];if(w.stirred)return;
+  w.prog=0;const hb=$('#hold');if(hb)hb.style.setProperty('--p',0);
+  drawPlate();say('Aduk lebih lama supaya darah dan serum tercampur rata. Coba lagi.','warn');log('S3b',`Pengadukan sumur ${WELLS[i]} kurang dari 3 detik`);
+}
+function startReaction(){
+  state.reacting=true;const t0=performance.now(),D=reduce?300:4000;
+  (function f(now){
+    const u=Math.min(1,(now-t0)/D);state.reactLeft=Math.ceil(120*(1-u));updTimer();
+    if(u<1)return requestAnimationFrame(f);
+    state.reacting=false;state.wells.forEach(w=>{w.reacted=true});
+    if(state.step==='s3b'){drawPlate();updS3b();say('Waktu reaksi selesai. Perhatikan perbedaan tampilan tiap sumur, lalu tekan <b>Amati</b>.','ok')}
+  })(t0);
+}
+VIEWS.s3b=function(){
+  bench().innerHTML=`<div class="plate-host" id="plateHost"></div><p class="timer" id="timer"></p>`;
+  drawPlate();
+  panel().innerHTML=`<p class="eyebrow">S3b · Prosedur</p><h2>Aduk setiap campuran</h2>
+  <p class="lead">Pilih sumur di plat, lalu tahan tombol di bawah sampai lingkaran hijau penuh (3 detik). Ulangi untuk keempat sumur.</p>
+  <p class="status">Sumur terpilih: <b class="mono" id="selname"></b></p>
+  <button type="button" class="hold" id="hold"><span class="fill"></span><span>Tahan untuk mengaduk</span></button>
+  <ul class="checklist" id="s3blist"></ul>
+  <div class="msg" id="msg" hidden></div>
+  <div class="actions">${gate('toS3c','Amati',false,'Aduk keempat sumur dan tunggu waktu reaksi selesai dulu.')}</div>`;
+  const hb=$('#hold');
+  hb.addEventListener('pointerdown',e=>{try{hb.setPointerCapture(e.pointerId)}catch(_){}holdStart(e)});
+  ['pointerup','pointercancel','lostpointercapture'].forEach(ev=>hb.addEventListener(ev,holdEnd));
+  hb.addEventListener('keydown',e=>{if((e.key===' '||e.key==='Enter')&&!e.repeat){holdStart(e)}});
+  hb.addEventListener('keyup',e=>{if(e.key===' '||e.key==='Enter')holdEnd()});
+  hb.addEventListener('contextmenu',e=>e.preventDefault());
+  bindGate('toS3c',()=>go('s3c'));
+  updS3b();
+};
+
+/* ---------- S3c ---------- */
+function viewWell(i){
+  const w=state.wells[i];
+  if(!w.reacted){say('Aduk dan tunggu reaksi selesai dulu.','warn');return}
+  state.viewing=i;
+  Scope.show(state.seed+i*31,pat(curType())[i],true);
+  $('#scopeCap').textContent=`Perbesaran 400× · sumur ${WELLS[i]}`;
+  if(state.step==='s3c'&&!w.seen){w.seen=true;updS3c()}
+  drawPlate();
+}
+function updS3c(){
+  const n=count('seen');
+  $('#s3cstatus').innerHTML=`<span><b>${n}</b>/4 sumur sudah diamati</span>`;
+  setGate('toS4',n===4);
+  if(n===4)say('Keempat sumur sudah diamati. Tekan <b>Lanjut</b> untuk mencatat pengamatanmu.','ok');
+}
+function scopeHTML(){return `<div class="scope"><div class="eyepiece"><canvas id="scopeCv" aria-label="Tampilan mikroskop sel darah merah"></canvas></div>
+  <div class="scope-info"><p class="scope-cap" id="scopeCap">Perbesaran 400× · belum ada sumur</p>
+  <div class="legend"><span><i class="lg-cell"></i>Sel darah merah (membawa antigen di permukaannya)</span><span><i class="lg-ab"></i>Antibodi dari serum reagen</span></div></div></div>`}
+VIEWS.s3c=function(){
+  state.viewing=null;
+  bench().innerHTML=`<div class="plate-host" id="plateHost"></div>${scopeHTML()}`;
+  drawPlate();Scope.mount($('#scopeCv'));
+  panel().innerHTML=`<p class="eyebrow">S3c · Prosedur</p><h2>Amati di bawah mikroskop</h2>
+  <p class="lead">Ketuk setiap sumur untuk melihat perbesarannya. Perhatikan apakah sel darah merah saling menempel atau tetap tersebar. Kesimpulannya kamu catat di langkah berikutnya.</p>
+  <p class="status" id="s3cstatus"></p>
+  <div class="msg" id="msg" hidden></div>
+  <div class="actions">${gate('toS4','Lanjut',false,'Amati keempat sumur dulu. Sumur yang belum diamati sedang berkedip.')}</div>`;
+  bindGate('toS4',()=>go('s4'),()=>{state.blink=true;drawPlate();setTimeout(()=>{state.blink=false},2800)});
+  updS3c();
+};
+
+/* ---------- S4 ---------- */
+function refTable(){
+  return `<div class="tbl-wrap"><table class="ref"><thead><tr><th>Golongan</th>${WELLS.map(w=>`<th>${w}</th>`).join('')}</tr></thead><tbody>${TYPES.map(t=>`<tr><td><b>${tname(t)}</b></td>${pat(t).map(v=>`<td class="${v?'pos':'neg'}">${v?'Menggumpal':'Rata'}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+}
+function panelS4(){
+  const L=state.locked4,dis=L?'disabled':'';
+  return `<p class="eyebrow">S4 · Observasi</p><h2>Catat pengamatanmu</h2>
+  <p class="lead">Ketuk sumur di plat untuk melihat perbesarannya lagi. Tentukan apakah tiap sumur menggumpal, lalu pilih golongan darah dan Rhesus sampel.</p>
+  <div class="obs">${WELLS.map((n,i)=>`<div class="obs-row ${state.flags.includes(i)&&!L?'flag':''}"><b>${n}</b><div class="seg" role="group" aria-label="Pengamatan sumur ${n}">
+    <button type="button" data-row="${i}" data-v="1" aria-pressed="${state.obs[i]===true}" ${dis}>Menggumpal</button>
+    <button type="button" data-row="${i}" data-v="0" aria-pressed="${state.obs[i]===false}" ${dis}>Tidak menggumpal</button></div></div>`).join('')}</div>
+  <fieldset><legend>Golongan darah ABO</legend><div class="chips">${['A','B','AB','O'].map(v=>`<button type="button" class="chipbtn" data-abo="${v}" aria-pressed="${state.abo===v}" ${dis}>${v}</button>`).join('')}</div></fieldset>
+  <fieldset><legend>Rhesus</legend><div class="chips">${['+','-'].map(v=>`<button type="button" class="chipbtn" data-rh="${v}" aria-pressed="${state.rh===v}" ${dis}>Rh${v==='+'?'+':'−'}</button>`).join('')}</div></fieldset>
+  ${L?'':`<div class="actions" style="justify-content:flex-start"><button type="button" class="btn ghost" id="check4">Periksa jawaban</button></div>`}
+  <div class="msg" id="msg" hidden></div>
+  ${state.tries4>=2&&!L?`<div class="qcard"><span class="eyebrow">Tabel acuan pola</span>${refTable()}</div>`:''}
+  <div class="actions">${gate('toS5','Lanjut',L,'Periksa jawabanmu dulu. Lanjut aktif bila hasilnya sesuai pola di keempat sumur.')}</div>`;
+}
+function bindS4(){
+  $$('.seg button').forEach(b=>b.addEventListener('click',()=>{state.obs[+b.dataset.row]=b.dataset.v==='1';$$(`.seg button[data-row="${b.dataset.row}"]`).forEach(x=>x.setAttribute('aria-pressed',String(x===b)))}));
+  $$('[data-abo]').forEach(b=>b.addEventListener('click',()=>{state.abo=b.dataset.abo;$$('[data-abo]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)))}));
+  $$('[data-rh]').forEach(b=>b.addEventListener('click',()=>{state.rh=b.dataset.rh;$$('[data-rh]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)))}));
+  const c=$('#check4');if(c)c.addEventListener('click',check4);
+  bindGate('toS5',()=>go('s5'));
+}
+function check4(){
+  const T=curType(),P=pat(T);
+  if(state.obs.some(v=>v==null)||!state.abo||!state.rh){say('Lengkapi pengamatan keempat sumur, golongan ABO, dan Rhesus dulu.','warn');return}
+  const rows=[0,1,2,3].filter(i=>state.obs[i]!==P[i]),aboOk=state.abo===T.abo,rhOk=state.rh===T.rh;
+  if(!rows.length&&aboOk&&rhOk){
+    state.locked4=true;state.flags=[];drawPlate();panel().innerHTML=panelS4();bindS4();
+    say(`Tepat. Sampel <b>${cur().code}</b> bergolongan darah <b>${tname(T)}</b>. Kartu identitas golongan darah sudah terisi.`,'ok');return;
+  }
+  state.tries4++;let hint;
+  if(rows.length){state.flags=rows;hint=`Lihat lagi sumur ${WELLS[rows[0]]}. Apakah sel darah tampak berbutir dan saling menempel, atau tetap rata?`;log('S4',`Pengamatan sumur ${rows.map(i=>WELLS[i]).join(', ')} belum tepat`)}
+  else if(!aboOk){state.flags=[0,1];hint=`Sumur Anti-A ${P[0]?'menggumpal':'tidak menggumpal'} dan Anti-B ${P[1]?'menggumpal':'tidak menggumpal'}. Antigen apa yang ada pada sel darah ini?`;log('S4',`Golongan ABO dipilih ${state.abo}`)}
+  else{state.flags=[3];hint=`Lihat lagi sumur Anti-D. Apa artinya kalau sumur itu ${P[3]?'menggumpal':'tidak menggumpal'}?`;log('S4',`Rhesus dipilih Rh${state.rh==='+'?'+':'−'}`)}
+  drawPlate();panel().innerHTML=panelS4();bindS4();
+  say(hint+(state.tries4===2?' Tabel acuan pola sekarang ditampilkan.':''),'warn');
+}
+VIEWS.s4=function(){
+  state.viewing=null;
+  bench().innerHTML=`<div class="plate-host" id="plateHost"></div>${scopeHTML()}`;
+  drawPlate();Scope.mount($('#scopeCv'));
+  panel().innerHTML=panelS4();bindS4();
+};
+
+/* ---------- S5 ---------- */
+function buildAnalysis(){
+  const P=pat(curType()),a=P[0],b=P[1];
+  let q1,ok1;
+  if(a&&!b){q1='Mengapa darah di sumur Anti-A menggumpal, sedangkan di sumur Anti-B tidak?';ok1='Sel darah merah membawa antigen A. Antibodi anti-A mengikatnya sehingga sel-sel saling menempel; antigen B tidak ada, jadi anti-B tidak bereaksi.'}
+  else if(!a&&b){q1='Mengapa darah di sumur Anti-B menggumpal, sedangkan di sumur Anti-A tidak?';ok1='Sel darah merah membawa antigen B. Antibodi anti-B mengikatnya sehingga sel-sel saling menempel; antigen A tidak ada, jadi anti-A tidak bereaksi.'}
+  else if(a&&b){q1='Mengapa darah di sumur Anti-A dan Anti-B sama-sama menggumpal?';ok1='Sel darah merah membawa antigen A dan antigen B sekaligus, sehingga antibodi anti-A maupun anti-B sama-sama mengikat sel dan membuatnya saling menempel.'}
+  else{q1='Mengapa darah di sumur Anti-A dan Anti-B sama-sama tidak menggumpal?';ok1='Sel darah merah tidak membawa antigen A maupun antigen B, sehingga tidak ada yang diikat oleh antibodi anti-A dan anti-B.'}
+  const D=P[3];
+  const Q=[
+    {q:q1,ev:'Perbesaran sumur Anti-A dan Anti-B (S3c), tabel observasi (S4)',opts:[[ok1,1],['Serum di sumur yang menggumpal lebih pekat daripada serum di sumur lain.',0],['Darah di sumur itu membeku karena trombosit menjadi aktif.',0],['Plasma pasien membawa antibodi yang sama dengan serum reagen.',0]],fb:'Bandingkan kedua sumur. Antigen apa yang ada di permukaan sel darah ini?'},
+    {q:'Bagaimana hasil sumur Anti-D menentukan Rhesus darah?',ev:'Sumur Anti-D (S3c), pilihan Rhesus (S4)',opts:[['Jika menggumpal, antigen D ada (Rh+). Jika tidak menggumpal, antigen D tidak ada (Rh−).',1],['Jika menggumpal, darah bersifat Rh− karena antibodi D aktif.',0],['Sumur Anti-D hanya kontrol dan tidak menentukan Rhesus.',0],['Rhesus ditentukan dari sumur Anti-AB, bukan Anti-D.',0]],fb:'Lihat lagi sumur Anti-D. Apa artinya kalau sumur itu menggumpal?',after:`Pada sampel ini sumur Anti-D ${D?'menggumpal, jadi Rh+':'tidak menggumpal, jadi Rh−'}.`},
+    {q:'Apakah penggumpalan pada uji ini sama dengan darah membeku?',ev:'Ciri gumpalan pada perbesaran (S3c)',opts:[['Tidak. Aglutinasi adalah ikatan antigen–antibodi yang membuat sel darah merah saling menempel; pembekuan melibatkan trombosit dan faktor pembekuan (fibrin).',1],['Ya, keduanya terjadi karena trombosit pecah.',0],['Ya, karena keduanya membuat darah tampak bergumpal.',0],['Tidak, karena aglutinasi hanya terjadi pada golongan O.',0]],fb:'Perhatikan apa yang saling menempel pada gambar perbesaran.'},
+    {q:'Mengapa golongan darah pendonor harus dicocokkan dengan penerima sebelum transfusi?',ev:'Kartu identitas hasil (S6), tabel acuan pola',opts:[['Antibodi penerima akan mengikat antigen pada sel darah pendonor yang tidak cocok sehingga sel menggumpal di dalam tubuh. Contoh: penerima A punya anti-B, jadi tidak cocok menerima darah B.',1],['Agar warna darah pendonor dan penerima sama.',0],['Supaya volume darah penerima tidak berlebihan.',0],['Karena sel darah penerima akan berubah golongan mengikuti pendonor.',0]],fb:'Antibodi apa yang dimiliki penerima? Antigen pendonor mana yang akan dikenalinya?'}
+  ];
+  return Q.map(x=>({...x,opts:shuffle(x.opts),chosen:null,done:false}));
+}
+const QUIZ=[
+  {id:'q1',type:'radio',q:'Sampel menggumpal di sumur Anti-B, Anti-AB, dan Anti-D, tetapi tidak di Anti-A. Apa golongan darahnya?',opts:['A Rh+','A Rh−','B Rh+','B Rh−','AB Rh+'],key:'B Rh+',
+    fb:v=>v.startsWith('A')?'Periksa sumur Anti-A. Apakah ada antigen A?':'Sumur Anti-D menggumpal. Apa artinya?'},
+  {id:'q2',type:'check',q:'Pasien bergolongan A dapat menerima sel darah merah (sistem ABO) dari pendonor golongan … (pilih semua yang benar)',opts:['A','B','AB','O'],key:['A','O'],
+    fb:()=>'Pasien A punya antibodi anti-B. Pendonor mana yang membawa antigen B?'},
+  {id:'q3',type:'radio',q:'Jika sampel tidak menggumpal di keempat sumur, apa kesimpulannya?',opts:['O Rh+, tidak punya antigen A dan B','O Rh−, tidak punya antigen A, B, maupun D','AB Rh−, punya antigen A dan B','Sampel rusak dan harus diulang'],key:'O Rh−, tidak punya antigen A, B, maupun D',
+    fb:()=>'Tidak menggumpal berarti tidak ada ikatan antigen–antibodi. Antigen mana yang tidak ada?'}
+];
+function quizRight(q,v){return q.type==='check'?(v.length===q.key.length&&q.key.every(k=>v.includes(k))):v===q.key}
+function sheetHTML(){
+  const P=pat(curType());
+  return `<div class="sheet"><div><p class="eyebrow">Lembar kerja · Pasien ${cur().code}</p><h2>Analisis hasil uji</h2></div>
+  <div class="obs-sum">${WELLS.map((n,i)=>`<div>${miniWell(P[i],34)}<span><b class="mono">${n}</b><br>${P[i]?'Menggumpal':'Tidak menggumpal'}</span></div>`).join('')}</div>
+  ${state.analysis.map((x,qi)=>`<div class="q"><h3><span class="n">${qi+1}.</span>${x.q}</h3><p class="muted" style="font-size:14px">Bukti: ${x.ev}</p>
+    ${x.opts.map((o,oi)=>{const pressed=x.chosen===oi;return `<button type="button" class="opt ${pressed?(o[1]?'right':'wrong'):''}" data-q="${qi}" data-o="${oi}" aria-pressed="${pressed}" ${x.done?'disabled':''}>${o[0]}</button>`}).join('')}
+    ${x.chosen!=null?(x.done?`<div class="msg ok">Tepat. ${x.after||''}</div>`:`<div class="msg warn">${x.fb}</div>`):''}</div>`).join('')}
+  </div>`;
+}
+function bindSheet(){
+  $$('.opt[data-q]').forEach(b=>b.addEventListener('click',()=>{
+    const x=state.analysis[+b.dataset.q],o=+b.dataset.o;if(x.done)return;
+    x.chosen=o;if(x.opts[o][1])x.done=true;else log('S5',`Analisis nomor ${+b.dataset.q+1} belum tepat`);
+    bench().innerHTML=sheetHTML();bindSheet();updS5();
+    const el=$(`.opt[data-q="${b.dataset.q}"][data-o="${o}"]`);if(el)el.focus({preventScroll:true});
+  }));
+}
+function quizHTML(){
+  const D=state.quizDone;
+  return QUIZ.map((q,qi)=>{
+    const v=state.quiz[q.id];
+    const opts=q.opts.map((o,oi)=>{const id=`${q.id}-${oi}`;const checked=q.type==='check'?v.includes(o):v===o;
+      return `<label class="radio" for="${id}"><input type="${q.type==='check'?'checkbox':'radio'}" name="${q.id}" id="${id}" value="${esc(o)}" ${checked?'checked':''} ${D?'disabled':''}> ${o}</label>`}).join('');
+    let fb='';if(D){const r=quizRight(q,v);fb=`<div class="msg ${r?'ok':'warn'}">${r?'Benar.':`Kunci: ${Array.isArray(q.key)?q.key.join(' dan '):q.key}. ${q.fb(v||'')}`}</div>`}
+    return `<fieldset><legend><span class="mono" style="color:var(--accent)">Soal ${qi+1}.</span> ${q.q}</legend>${opts}${fb}</fieldset>`;
+  }).join('');
+}
+function updS5(){
+  const ok=state.analysis.every(x=>x.done)&&state.quizDone;
+  setGate('toS6',ok);
+}
+VIEWS.s5=function(){
+  if(!state.analysis)state.analysis=buildAnalysis();
+  bench().innerHTML=sheetHTML();bindSheet();
+  panel().innerHTML=`<p class="eyebrow">S5 · Analisis dan kuis</p><h2>Jawab, lalu uji pemahamanmu</h2>
+  <p class="lead">Jawab empat pertanyaan di lembar kerja dengan melihat data pengamatan. Setelah itu kerjakan kuis tiga soal di bawah.</p>
+  <div id="quiz" style="display:flex;flex-direction:column;gap:18px">${quizHTML()}</div>
+  ${state.quizDone?`<p class="status"><span class="badge">Skor kuis ${state.score}/3</span></p>`:`<div class="actions" style="justify-content:flex-start"><button type="button" class="btn ghost" id="sendQuiz">Kirim kuis</button></div>`}
+  <div class="msg" id="msg" hidden></div>
+  <div class="actions">${gate('toS6','Lanjut',false,'Jawab benar keempat pertanyaan analisis dan kirim kuis dulu.')}</div>`;
+  $$('#quiz input').forEach(inp=>inp.addEventListener('change',()=>{
+    const q=QUIZ.find(z=>z.id===inp.name);
+    if(q.type==='check'){state.quiz[q.id]=$$(`input[name=${q.id}]:checked`).map(x=>x.value)}else state.quiz[q.id]=inp.value;
+  }));
+  const s=$('#sendQuiz');
+  if(s)s.addEventListener('click',()=>{
+    if(!state.quiz.q1||!state.quiz.q2.length||!state.quiz.q3){say('Jawab ketiga soal kuis dulu.','warn');return}
+    state.quizDone=true;state.score=QUIZ.filter(q=>quizRight(q,state.quiz[q.id])).length;
+    QUIZ.forEach((q,i)=>{if(!quizRight(q,state.quiz[q.id]))log('S5',`Kuis soal ${i+1} keliru`)});
+    VIEWS.s5();say(`Kuis terkirim. Skormu ${state.score} dari 3.`,state.score===3?'ok':'info');
+  });
+  bindGate('toS6',()=>go('s6'));
+  updS5();
+};
+
+/* ---------- S6 ---------- */
+function summaryText(T){
+  const ag=[];if(T.abo.includes('A'))ag.push('A');if(T.abo.includes('B'))ag.push('B');if(T.rh==='+')ag.push('D');
+  const agl={A:'anti-B',B:'anti-A',AB:'tidak ada aglutinin anti-A maupun anti-B',O:'anti-A dan anti-B'}[T.abo];
+  return `<p>Sel darah merah pasien membawa aglutinogen <b>${ag.length?ag.join(', '):'tidak ada (bukan A, B, maupun D)'}</b>.</p>
+  <p>Plasma golongan ${T.abo} mengandung aglutinin <b>${agl}</b>.</p>
+  ${T.rh==='-'?'<p class="muted">Orang Rh− tidak membawa anti-D sejak lahir; anti-D baru terbentuk setelah terpapar darah Rh+.</p>':''}`;
+}
+VIEWS.s6=function(){
+  const p=cur(),T=p.type,P=pat(T),pos=WELLS.filter((_,i)=>P[i]);
+  const right=state.prediction==='gumpal';
+  const steps={};state.log.forEach(l=>{steps[l.step]=(steps[l.step]||0)+1});
+  bench().innerHTML=`<div class="idcard" aria-label="Kartu identitas golongan darah">
+    <div class="idc-top"><span>KARTU IDENTITAS GOLONGAN DARAH</span><span>LAB VIRTUAL · XI</span></div>
+        <div class="idc-body"><div><p class="lbl">Kode pasien</p><p class="val mono">${p.code}</p><p class="lbl">Umur</p><p class="val">${p.age} tahun</p><p class="lbl">Metode</p><p class="val" style="font-size:15px">Aglutinasi plat · 4 serum</p></div>
+      <div class="idc-big">${T.abo}<span style="font-size:.5em">${T.rh==='+'?'+':'−'}</span><small>Rhesus ${T.rh==='+'?'positif':'negatif'}</small></div></div>
+    <div class="idc-wells">${WELLS.map((n,i)=>`<div>${miniWell(P[i],40)}<b>${n}</b><span>${P[i]?'menggumpal':'rata'}</span></div>`).join('')}</div>
+    ${state.done?'<div class="stamp">SELESAI</div>':''}
+  </div>
+  <div class="sum-grid">
+    <div class="qcard"><span class="eyebrow">Prediksi vs hasil</span><p>Prediksimu: <b>${PRED[state.prediction]||'—'}</b>.</p>
+      <p>${right?'Sesuai hasil.':'Belum sesuai hasil.'} Pada sampel ini darah menggumpal di sumur ${pos.length?pos.join(', '):'tidak satu pun'}${pos.length?', yaitu sumur yang antibodinya cocok dengan antigen sel darah merah':' karena sel tidak membawa antigen A, B, maupun D'}.</p>
+      ${state.reason?`<p class="muted">Alasanmu: “${esc(state.reason)}”</p>`:''}</div>
+    <div class="qcard"><span class="eyebrow">Aglutinogen dan aglutinin</span>${summaryText(T)}</div>
+    <div class="qcard"><span class="eyebrow">Catatan langkah</span>${state.log.length?`<p>${state.log.length} langkah perlu diulang:</p><ul>${Object.keys(steps).map(s=>`<li>${s}: ${steps[s]} kali</li>`).join('')}</ul><ul>${state.log.slice(0,5).map(l=>`<li>${esc(l.text)}</li>`).join('')}</ul>`:'<p>Semua langkah tepat pada percobaan pertama.</p>'}
+      <p class="muted">Skor kuis: ${state.quizDone?state.score+'/3':'—'}</p></div>
+  </div>`;
+  panel().innerHTML=`<p class="eyebrow">S6 · Kesimpulan</p><h2>Tulis kesimpulanmu</h2>
+  <p class="lead">Jawab pertanyaan penyelidikan dalam 1–2 kalimat berdasarkan hasil uji pasien ${p.code}.</p>
+  <label class="field" for="concl">Kesimpulan<textarea id="concl" rows="4" placeholder="Darah pasien ${p.code} menggumpal di sumur … karena …" ${state.done?'disabled':''}>${esc(state.conclusion)}</textarea></label>
+  <label class="field" for="refl">Refleksi<textarea id="refl" rows="3" placeholder="Bagian mana yang paling membantumu memahami aglutinasi? Apa yang masih membingungkan?" ${state.done?'disabled':''}>${esc(state.reflection)}</textarea></label>
+  <div class="msg" id="msg" hidden></div>
+  <div class="actions"><button type="button" class="btn ghost" id="again">Pasien lain</button>${state.done?'':gate('finish','Selesai',state.conclusion.trim().length>0,'Tulis kesimpulan 1–2 kalimat dulu.')}</div>`;
+  const c=$('#concl');c.addEventListener('input',()=>{state.conclusion=c.value;setGate('finish',c.value.trim().length>0)});
+  $('#refl').addEventListener('input',e=>{state.reflection=e.target.value});
+  bindGate('finish',()=>{state.done=true;state.doneAt=new Date();state.history.push(T);VIEWS.s6();
+    say(`Praktikum selesai pukul ${state.doneAt.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})}. Tekan <b>Pasien lain</b> untuk menguji sampel berbeda.`,'ok')});
+  $('#again').addEventListener('click',()=>{if(!state.done)state.history.push(T);resetRun();go('s2')});
+  if(state.done)say('Praktikum ditandai selesai. Tekan <b>Pasien lain</b> untuk menguji sampel berbeda; prediksi awalmu tetap tersimpan.','ok');
+};
+
+/* ---------- init ---------- */
+const B=$('#bench');
+B.addEventListener('click',e=>{const g=e.target.closest&&e.target.closest('[data-well]');if(g)onWell(+g.dataset.well)});
+B.addEventListener('keydown',e=>{if(e.key!=='Enter'&&e.key!==' ')return;const g=e.target.closest&&e.target.closest('[data-well]');if(g){e.preventDefault();onWell(+g.dataset.well)}});
+render();
+})();
+</script>
